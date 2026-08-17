@@ -1,0 +1,22 @@
+---
+description: Padrões React, Zustand, rotas e mapa Leaflet
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# React / TypeScript
+
+- React 19 + Vite + TypeScript; estado global com **Zustand** (`useAppStore`).
+- Rotas com `react-router-dom`; páginas em `src/pages/`, UI reutilizável em `src/components/`.
+- Dados em tempo real: `useRealtimeData` → `subscribeData` → `setData` na store.
+- Mapa: `react-leaflet` / Leaflet em `components/map/` — hover tooltip, clique abre painel (`openPanel`).
+- Formulário de liderança: `cidade_id` obrigatório; após salvar o mapa deve refletir sem reload.
+- Preferir componentes funcionais; tipar props e retornos com tipos de `src/types`.
+- Testes: Vitest + Testing Library em `src/test/`. Lint: `oxlint`.
+
+```tsx
+// ✅ status e dados via store
+const status = useAppStore((s) => s.getCidadeStatus(id));
+
+// ❌ fetch/Firestore direto no componente de mapa
+```

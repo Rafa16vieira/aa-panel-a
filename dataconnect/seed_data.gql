@@ -1,0 +1,22 @@
+mutation SeedData @transaction {
+  administrator_insertMany(data: [
+    { username: "admin_alice", role: "SUPER_ADMIN" },
+    { username: "admin_bob", role: "CONTENT_MODERATOR" },
+    { username: "admin_charlie", role: "SUPPORT" }
+  ])
+  city_insertMany(data: [
+    { id: "e1000000-e000-4000-8000-000000000001", name: "San Francisco", region: "West", populationCount: 800000, totalStickersEarned: 5000 },
+    { id: "e1000000-e000-4000-8000-000000000002", name: "New York", region: "East", populationCount: 8000000, totalStickersEarned: 15000 },
+    { id: "e1000000-e000-4000-8000-000000000003", name: "Austin", region: "South", populationCount: 900000, totalStickersEarned: 8000 }
+  ])
+  person_insertMany(data: [
+    { id: "f2000000-f000-4000-8000-000000000001", fullName: "Alice Smith", email: "alice@example.com", stickerCount: 10, cityId: "e1000000-e000-4000-8000-000000000001" },
+    { id: "f2000000-f000-4000-8000-000000000002", fullName: "Bob Jones", email: "bob@example.com", stickerCount: 5, cityId: "e1000000-e000-4000-8000-000000000001" },
+    { id: "f2000000-f000-4000-8000-000000000003", fullName: "Charlie Brown", email: "charlie@example.com", stickerCount: 20, cityId: "e1000000-e000-4000-8000-000000000002" }
+  ])
+  stickerEvent_insertMany(data: [
+    { amount: 5, timestamp: "2023-10-01T10:00:00Z", reason: "First contribution", personId: "f2000000-f000-4000-8000-000000000001" },
+    { amount: 5, timestamp: "2023-10-02T12:00:00Z", reason: "Monthly goal", personId: "f2000000-f000-4000-8000-000000000001" },
+    { amount: 20, timestamp: "2023-10-03T09:00:00Z", reason: "Top contributor", personId: "f2000000-f000-4000-8000-000000000003" }
+  ])
+}

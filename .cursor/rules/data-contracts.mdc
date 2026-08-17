@@ -1,0 +1,34 @@
+---
+description: Contratos de dados, Supabase e integridade liderança↔cidade
+globs: src/types/**/*,src/services/**/*,src/store/**/*,supabase/migrations/**
+alwaysApply: false
+---
+
+# Contratos de dados (DBA)
+
+Fonte da verdade: `src/types/index.ts`. Store, services e forms devem aderir a esses tipos.
+
+## Entidades
+
+- `Cidade`: `id`, `nome`
+- `Lideranca`: `id`, `nome`, `cidade_id`, `quantidade_pessoas`, `responsavel` (default **NTR**) — cidade pode ter **várias** lideranças
+- `Visita`: `id`, `lideranca_id`, `data_hora` (`string | null`), `observacoes` — liderança pode ter **várias** visitas. IDs `agenda-*` vêm da [agenda da campanha](https://docs.google.com/document/d/1-I4OUgSi9dbPdJUxfBrQW0Oq0KAg37PetH4G6lULlFY/edit) (sync diário). Se o compromisso sair da pauta, só remove visitas **futuras**; datas já passadas permanecem.
+- `AuthSession` / `UsuarioPublico`: login por usuário e senha; conta só entra após `aprovado`. Admin gerencia usuários.
+- Sem agendamento / data futura → visita **em aberto** até a data ser anterior ao momento atual
+- Visita **realizada** → `data_hora` preenchida e já passada (usada em “cidades mais visitadas”)
+
+## Status de município (`CidadeStatus`)
+
+1. `sem_lideranca` — sem liderança
+2. `visita_recente` — visita realizada nos últimos 30 dias (verde escuro no mapa)
+3. `visita_agendada` — liderança com visita futura/hoje
+4. `com_lideranca` — tem liderança, sem visita recente nem agendada
+
+Calculado em `useAppStore.getCidadeStatus` — não persistir cor/status no banco.
+
+## Persistência
+
+- Supabase (Postgres + Realtime) quando `.env` tem `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`; senão localStorage via `dataService`.
+- Tabelas: `cidades`, `liderancas`, `visitas`, `usuarios`, `sessoes` — ver `supabase/migrations/`.
+- Auth: RPCs `auth_*` (senha com bcrypt). Sem policies de SELECT em `usuarios` (hashes não saem via PostgREST).
+- Alterar schema → atualizar tipos + migration SQL + testes em `src/test/`.

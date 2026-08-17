@@ -1,0 +1,60 @@
+.bar-chart-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--cor-fundo-painel);
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px var(--cor-sombra);
+  min-height: 320px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.bar-chart-card:hover {
+  box-shadow: 0 4px 14px var(--cor-sombra);
+}
+
+.bar-chart-card__header {
+  margin-bottom: 8px;
+}
+
+.bar-chart-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+.bar-chart-card__desc {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--cor-texto-secundario);
+}
+
+.bar-chart-card__chart {
+  flex: 1;
+  width: 100%;
+  min-height: 260px;
+}
+
+.bar-chart-card__empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cor-texto-secundario);
+  font-size: 0.9rem;
+  min-height: 220px;
+}
+
+@media (max-width: 640px) {
+  .bar-chart-card {
+    min-height: 280px;
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .bar-chart-card__chart {
+    min-height: 220px;
+  }
+}

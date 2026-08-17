@@ -1,0 +1,14 @@
+---
+description: Pipeline CI/CD, ambientes e deploy GitHub Pages
+globs: .github/workflows/**/*,.env.example,supabase/migrations/**
+alwaysApply: false
+---
+
+# CI/CD
+
+- Workflow: `.github/workflows/ci.yml` — **lint → test → build**; deploy Pages na branch `main`.
+- Agenda: `.github/workflows/sync-agenda.yml` — 1× ao dia (e manual) lê o Google Doc e grava visitas no Supabase.
+- Variáveis Supabase: documentar em `.env.example`; nunca commitar `.env` com secrets.
+- Sem Supabase configurado, app deve continuar funcionando em modo localStorage.
+- Schema/RLS: `supabase/migrations/001_init.sql` — aplicar no SQL Editor e revalidar QA.
+- Não sugerir merge/deploy com lint ou testes falhando.

@@ -1,0 +1,21 @@
+---
+description: Estilização Tailwind 4, cores via personalizar e UX visual
+alwaysApply: true
+---
+
+# Estilização de layout
+
+- CSS com **Tailwind v4**. Estilos reutilizáveis ficam em `src/styles.css` (não duplicar em páginas).
+- **Antes de implantar cores novas**, perguntar o padrão ao usuário. Cores existentes vêm de `src/theme/personalizar.ts`.
+- Nunca hardcode hex/rgb de marca em componentes. Use `var(--cor-*)` (via `useTheme`) ou importe `personalizar`.
+- Bordas suavizadas em todos os elementos interativos/containers (`rounded-*` / `border-radius`).
+- Transições entre telas fluídas e discretas (opacidade/transform curtas; sem animações chamativas).
+- Leaflet/mapa: cores de município, hover e tooltip só pelas chaves de `personalizar.cores`.
+
+```css
+/* ✅ */
+background: var(--cor-primaria);
+
+/* ❌ */
+background: #1B4D7A;
+```

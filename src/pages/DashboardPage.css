@@ -1,0 +1,37 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-page__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+.dashboard-page__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--cor-texto-secundario);
+}
+
+.dashboard-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--cor-texto-secundario);
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .dashboard-page {
+    gap: 14px;
+  }
+
+  .dashboard-page__title {
+    font-size: 1.15rem;
+  }
+}

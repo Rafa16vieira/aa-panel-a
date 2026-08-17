@@ -1,0 +1,20 @@
+---
+description: Alterações de tema, logo e favicon via personalizar.ts
+globs: src/theme/**/*,src/hooks/useTheme.ts,docs/PERSONALIZAR.md,**/*.css
+alwaysApply: false
+---
+
+# Arquivo personalizar
+
+Único ponto de customização visual: `src/theme/personalizar.ts`.
+
+1. Alterar `cores`, `favicon`, `logo`, `nomeSistema`, `tipografia` ou `mapa` **só** nesse arquivo.
+2. Cada cor deve ter comentário explicando onde é usada.
+3. `useTheme` propaga `cores` para `--cor-*` no `:root` e aplica favicon/título.
+4. Documentação humana: `docs/PERSONALIZAR.md`.
+5. Após mudança de chaves novas: atualizar `useTheme` + teste `src/test/personalizar.test.ts`.
+
+```ts
+import { personalizar } from '../theme/personalizar';
+// personalizar.logo | personalizar.cores.primaria | ...
+```

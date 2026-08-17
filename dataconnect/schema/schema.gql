@@ -1,0 +1,26 @@
+type City @table {
+  name: String!
+  region: String!
+  populationCount: Int
+  totalStickersEarned: Int
+}
+
+type Person @table {
+  fullName: String!
+  email: String!
+  stickerCount: Int!
+  city: City
+}
+
+type StickerEvent @table {
+  amount: Int!
+  timestamp: Timestamp!
+  reason: String!
+  person: Person!
+}
+
+type Administrator @table {
+  username: String!
+  role: String!
+  lastLogin: Timestamp
+}

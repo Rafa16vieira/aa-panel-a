@@ -1,0 +1,32 @@
+---
+description: Estrutura de pastas, ativos gráficos e personalização
+alwaysApply: true
+---
+
+# Estruturação das pastas
+
+## Identidade visual
+
+- Logo e favicon em `public/` (pasta de personalização de marca).
+- Referências **somente** em `src/theme/personalizar.ts` (`logo`, `favicon`, `nomeSistema`).
+- Componentes importam de `personalizar` — nunca paths hardcoded de marca.
+
+## Gráficos e geo
+
+- Elementos gráficos estáticos do produto em uma única pasta: `public/` (marca) ou `src/assets/` (UI auxiliar).
+- GeoJSON dos municípios: `public/geo/`.
+
+## Código (`src/`)
+
+| Pasta | Uso |
+|-------|-----|
+| `types/` | Contratos DBA — fonte da verdade de dados |
+| `theme/` | `personalizar.ts` |
+| `services/` | Supabase + `dataService` + `authService` (login local ou RPC) |
+| `store/` | Zustand |
+| `hooks/` | Tempo real, tema |
+| `components/` | `map/`, `forms/`, `layout/` |
+| `pages/` | Rotas/telas |
+| `styles.css` | Estilos Tailwind/compartilhados |
+
+Não espalhar lógica de dados em componentes de UI — store/services.

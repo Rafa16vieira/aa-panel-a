@@ -1,0 +1,131 @@
+.usuarios-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.usuarios-page h2 {
+  margin: 0;
+  color: var(--cor-texto);
+}
+
+.usuarios-page .form-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--cor-erro);
+}
+
+.usuarios-empty {
+  margin: 0;
+  color: var(--cor-texto-secundario);
+}
+
+.usuarios-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.usuario-card {
+  background: var(--cor-fundo-painel);
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px var(--cor-sombra);
+}
+
+.usuario-card__info {
+  flex: 1;
+  min-width: 180px;
+}
+
+.usuario-card__nome {
+  margin: 0 0 6px;
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+.usuario-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.status-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto-secundario);
+  border: 1px solid var(--cor-borda);
+}
+
+.status-pill--ok {
+  color: var(--cor-sucesso);
+}
+
+.status-pill--admin {
+  color: var(--cor-primaria);
+}
+
+.usuario-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: var(--cor-borda);
+}
+
+.action-btn--danger {
+  color: var(--cor-erro);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.usuario-senha {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.usuario-senha input {
+  flex: 1;
+  min-width: 160px;
+  padding: 8px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  background: var(--cor-input-fundo);
+  color: var(--cor-texto);
+  font-family: inherit;
+}
+
+.usuario-senha input:focus {
+  outline: none;
+  border-color: var(--cor-input-foco);
+}

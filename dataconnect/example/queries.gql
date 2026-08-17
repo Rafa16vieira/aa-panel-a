@@ -1,0 +1,64 @@
+mutation AdministratorOperations @auth(level: USER) {
+  administrator_insert(data: { username: "admin", role: "super" })
+  administrator_update(id: "00000000-0000-0000-0000-000000000000", data: { role: "admin" })
+  administrator_delete(id: "00000000-0000-0000-0000-000000000000")
+}
+
+query AdministratorQueries @auth(level: USER) {
+  administrator(id: "00000000-0000-0000-0000-000000000000") {
+    username
+    role
+  }
+  administrators(limit: 10) {
+    username
+  }
+}
+
+mutation CityOperations @auth(level: PUBLIC, insecureReason: "Public city data is read-only information for all users.") {
+  city_insert(data: { name: "Springfield", region: "North" })
+  city_update(id: "00000000-0000-0000-0000-000000000000", data: { populationCount: 50000 })
+  city_delete(id: "00000000-0000-0000-0000-000000000000")
+}
+
+query CityQueries @auth(level: PUBLIC, insecureReason: "Public city data is for general information.") {
+  city(id: "00000000-0000-0000-0000-000000000000") {
+    name
+    region
+  }
+  cities(limit: 20) {
+    name
+  }
+}
+
+mutation PersonOperations @auth(level: USER) {
+  person_insert(data: { fullName: "Jane Doe", email: "jane@example.com", stickerCount: 0 })
+  person_update(id: "00000000-0000-0000-0000-000000000000", data: { stickerCount: 1 })
+  person_delete(id: "00000000-0000-0000-0000-000000000000")
+}
+
+query PersonQueries @auth(level: USER) {
+  person(id: "00000000-0000-0000-0000-000000000000") {
+    fullName
+    stickerCount
+  }
+  people(limit: 10) {
+    fullName
+  }
+}
+
+mutation StickerEventOperations @auth(level: USER) {
+  stickerEvent_insert(data: { amount: 5, reason: "Participation", timestamp_expr: "request.time", personId: "00000000-0000-0000-0000-000000000000" })
+  stickerEvent_update(id: "00000000-0000-0000-0000-000000000000", data: { amount: 10 })
+  stickerEvent_delete(id: "00000000-0000-0000-0000-000000000000")
+}
+
+query StickerEventQueries @auth(level: USER) {
+  stickerEvent(id: "00000000-0000-0000-0000-000000000000") {
+    amount
+    reason
+  }
+  stickerEvents(limit: 50) {
+    amount
+    timestamp
+  }
+}
