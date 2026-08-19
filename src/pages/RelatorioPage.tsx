@@ -61,9 +61,16 @@ function MetricTable({ title, description, rows, valueLabel }: MetricTableProps)
   const splitAt = Math.ceil(rows.length / 2);
   const colA = rows.slice(0, splitAt);
   const colB = rows.slice(splitAt);
+  const maxRowsPorColuna = Math.max(colA.length, colB.length);
+  const densityClass =
+    maxRowsPorColuna > 52
+      ? ' relatorio-section--print-ultra'
+      : maxRowsPorColuna > 42
+        ? ' relatorio-section--print-dense'
+        : '';
 
   return (
-    <section className="relatorio-section">
+    <section className={`relatorio-section${densityClass}`}>
       <h3 className="relatorio-section__title">{title}</h3>
       <p className="relatorio-section__desc">{description}</p>
       {rows.length === 0 ? (

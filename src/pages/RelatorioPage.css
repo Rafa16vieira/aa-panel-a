@@ -174,28 +174,42 @@
 
   .relatorio-print-title {
     margin-bottom: 8px;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .relatorio-print-title h1 {
     font-size: 1.1rem;
   }
 
+  .relatorio-kpis {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 4px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
   .relatorio-section {
-    break-inside: auto;
-    page-break-inside: auto;
+    break-inside: avoid;
+    page-break-inside: avoid;
     box-shadow: none;
     padding: 10px 12px;
-    margin-bottom: 8px;
+    margin-bottom: 0;
   }
 
   .relatorio-section__title {
     font-size: 0.95rem;
     margin-bottom: 2px;
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   .relatorio-section__desc {
     font-size: 0.72rem;
     margin-bottom: 8px;
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   .relatorio-table-wrap--screen {
@@ -207,6 +221,8 @@
     grid-template-columns: 1fr 1fr;
     gap: 10px;
     align-items: start;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .relatorio-table-columns--print.relatorio-table-columns--single {
@@ -215,10 +231,23 @@
 
   .relatorio-table-col {
     min-width: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .relatorio-table {
     font-size: 0.68rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .relatorio-table thead {
+    display: table-header-group;
+  }
+
+  .relatorio-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .relatorio-table th,
@@ -232,15 +261,10 @@
     width: 52px;
   }
 
-  .relatorio-kpis {
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
-    margin-bottom: 4px;
-  }
-
   .stat-card {
     box-shadow: none;
     break-inside: avoid;
+    page-break-inside: avoid;
     padding: 6px 8px;
   }
 
@@ -251,5 +275,34 @@
   .stat-label {
     font-size: 0.62rem;
     line-height: 1.2;
+  }
+
+  .relatorio-section--print-dense .relatorio-table {
+    font-size: 0.62rem;
+  }
+
+  .relatorio-section--print-dense .relatorio-table th,
+  .relatorio-section--print-dense .relatorio-table td {
+    padding: 2px 4px;
+    line-height: 1.15;
+  }
+
+  .relatorio-section--print-ultra .relatorio-table {
+    font-size: 0.55rem;
+  }
+
+  .relatorio-section--print-ultra .relatorio-table th,
+  .relatorio-section--print-ultra .relatorio-table td {
+    padding: 1px 3px;
+    line-height: 1.1;
+  }
+
+  .relatorio-section--print-ultra .relatorio-section__title {
+    font-size: 0.88rem;
+  }
+
+  .relatorio-section--print-ultra .relatorio-section__desc {
+    font-size: 0.65rem;
+    margin-bottom: 4px;
   }
 }
