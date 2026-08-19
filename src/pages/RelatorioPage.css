@@ -84,6 +84,10 @@
   overflow-x: auto;
 }
 
+.relatorio-table-columns {
+  display: none;
+}
+
 .relatorio-table {
   width: 100%;
   border-collapse: collapse;
@@ -104,14 +108,19 @@
 }
 
 .relatorio-table td:first-child {
-  width: 48px;
+  width: 36px;
   color: var(--cor-texto-secundario);
+}
+
+.relatorio-table td:nth-child(2) {
+  word-break: break-word;
 }
 
 .relatorio-table td:last-child {
   font-weight: 600;
   color: var(--cor-primaria);
   white-space: nowrap;
+  text-align: right;
 }
 
 .relatorio-print-title {
@@ -155,22 +164,92 @@
     max-width: none !important;
   }
 
+  @page {
+    margin: 12mm 10mm;
+  }
+
   .relatorio-page {
-    gap: 16px;
+    gap: 10px;
+  }
+
+  .relatorio-print-title {
+    margin-bottom: 8px;
+  }
+
+  .relatorio-print-title h1 {
+    font-size: 1.1rem;
   }
 
   .relatorio-section {
-    break-inside: avoid;
+    break-inside: auto;
+    page-break-inside: auto;
     box-shadow: none;
-    page-break-inside: avoid;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .relatorio-section__title {
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+  }
+
+  .relatorio-section__desc {
+    font-size: 0.72rem;
+    margin-bottom: 8px;
+  }
+
+  .relatorio-table-wrap--screen {
+    display: none !important;
+  }
+
+  .relatorio-table-columns--print {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .relatorio-table-columns--print.relatorio-table-columns--single {
+    grid-template-columns: 1fr;
+  }
+
+  .relatorio-table-col {
+    min-width: 0;
+  }
+
+  .relatorio-table {
+    font-size: 0.68rem;
+  }
+
+  .relatorio-table th,
+  .relatorio-table td {
+    padding: 3px 5px;
+    line-height: 1.25;
+  }
+
+  .relatorio-table th:last-child,
+  .relatorio-table td:last-child {
+    width: 52px;
   }
 
   .relatorio-kpis {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 4px;
   }
 
   .stat-card {
     box-shadow: none;
     break-inside: avoid;
+    padding: 6px 8px;
+  }
+
+  .stat-value {
+    font-size: 0.95rem;
+  }
+
+  .stat-label {
+    font-size: 0.62rem;
+    line-height: 1.2;
   }
 }

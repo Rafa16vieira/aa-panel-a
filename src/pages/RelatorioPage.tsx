@@ -26,7 +26,42 @@ interface MetricTableProps {
   valueLabel: string;
 }
 
+function TableChunk({
+  rows,
+  startIndex,
+  valueLabel,
+}: {
+  rows: { nome: string; valor: number }[];
+  startIndex: number;
+  valueLabel: string;
+}) {
+  return (
+    <table className="relatorio-table">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Município</th>
+          <th scope="col">{valueLabel}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, i) => (
+          <tr key={row.nome}>
+            <td>{startIndex + i + 1}</td>
+            <td>{row.nome}</td>
+            <td>{formatNum(row.valor)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 function MetricTable({ title, description, rows, valueLabel }: MetricTableProps) {
+  const splitAt = Math.ceil(rows.length / 2);
+  const colA = rows.slice(0, splitAt);
+  const colB = rows.slice(splitAt);
+
   return (
     <section className="relatorio-section">
       <h3 className="relatorio-section__title">{title}</h3>
@@ -34,26 +69,25 @@ function MetricTable({ title, description, rows, valueLabel }: MetricTableProps)
       {rows.length === 0 ? (
         <p className="relatorio-empty">Sem dados para exibir.</p>
       ) : (
-        <div className="relatorio-table-wrap">
-          <table className="relatorio-table">
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Município</th>
-                <th scope="col">{valueLabel}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <tr key={row.nome}>
-                  <td>{i + 1}</td>
-                  <td>{row.nome}</td>
-                  <td>{formatNum(row.valor)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="relatorio-table-wrap relatorio-table-wrap--screen">
+            <TableChunk rows={rows} startIndex={0} valueLabel={valueLabel} />
+          </div>
+          <div
+            className={`relatorio-table-columns relatorio-table-columns--print${
+              colB.length === 0 ? ' relatorio-table-columns--single' : ''
+            }`}
+          >
+            <div className="relatorio-table-col">
+              <TableChunk rows={colA} startIndex={0} valueLabel={valueLabel} />
+            </div>
+            {colB.length > 0 && (
+              <div className="relatorio-table-col">
+                <TableChunk rows={colB} startIndex={splitAt} valueLabel={valueLabel} />
+              </div>
+            )}
+          </div>
+        </>
       )}
     </section>
   );
