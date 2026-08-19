@@ -7,6 +7,7 @@ import {
   cidadesMaisVisitadas,
   contagemCidadesComSemLideranca,
   buildRelatorioResumo,
+  liderancasPorPessoasRelatorio,
 } from '../utils/dashboardMetrics';
 import { isVisitaEmAberto, isVisitaRealizada, isVisitaAgendada } from '../utils/visitas';
 
@@ -133,5 +134,26 @@ describe('dashboardMetrics', () => {
     expect(rel.cidadesComLideranca).toBe(3);
     expect(rel.pessoasPorCidade).toHaveLength(3);
     expect(rel.visitasRealizadasPorCidade).toHaveLength(1);
+  });
+
+  it('liderancasPorPessoasRelatorio agrega Marechal Deodoro e ordena por pessoas', () => {
+    const cidadesComMarechal: Cidade[] = [
+      ...cidades,
+      { id: 'c4', nome: 'Marechal Deodoro' },
+    ];
+    const lids: Lideranca[] = [
+      { id: 'l1', nome: 'A', cidade_id: 'c1', quantidade_pessoas: 10, responsavel: 'NTR' },
+      { id: 'l5', nome: 'M1', cidade_id: 'c4', quantidade_pessoas: 30, responsavel: 'NTR' },
+      { id: 'l6', nome: 'M2', cidade_id: 'c4', quantidade_pessoas: 20, responsavel: 'NTR' },
+      { id: 'l3', nome: 'C', cidade_id: 'c2', quantidade_pessoas: 20, responsavel: 'NTR' },
+    ];
+    const result = liderancasPorPessoasRelatorio({ cidades: cidadesComMarechal, liderancas: lids });
+    expect(result.find((r) => r.agregada)).toMatchObject({
+      nome: 'Marechal Deodoro',
+      valor: 50,
+    });
+    expect(result.filter((r) => r.nome === 'M1' || r.nome === 'M2')).toHaveLength(0);
+    expect(result[0].valor).toBe(50);
+    expect(result.map((r) => r.valor)).toEqual([50, 20, 10]);
   });
 });

@@ -132,6 +132,68 @@ export function cidadesMaisVisitadas(
 
 export const RELATORIO_TOP_N = 999;
 
+export const RELATORIO_MARECHAL_DEODORO = 'Marechal Deodoro';
+
+export interface LiderancaRelatorioRow {
+  key: string;
+  nome: string;
+  valor: number;
+  /** Linha agregada do município (ex.: Marechal Deodoro). */
+  agregada: boolean;
+}
+
+function normalizeNomeCidade(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .trim();
+}
+
+function isMarechalDeodoro(nomeCidade: string): boolean {
+  const n = normalizeNomeCidade(nomeCidade);
+  return n.includes('marechal') && n.includes('deodoro');
+}
+
+/** Lideranças ordenadas por pessoas; Marechal Deodoro vira uma linha com total absoluto. */
+export function liderancasPorPessoasRelatorio({
+  cidades,
+  liderancas,
+}: Pick<MetricsInput, 'cidades' | 'liderancas'>): LiderancaRelatorioRow[] {
+  const marechalCidade = cidades.find((c) => isMarechalDeodoro(c.nome));
+
+  const rows: LiderancaRelatorioRow[] = [];
+  let marechalTotal = 0;
+  let marechalLiderancas = 0;
+
+  for (const l of liderancas) {
+    if (marechalCidade && l.cidade_id === marechalCidade.id) {
+      marechalTotal += l.quantidade_pessoas;
+      marechalLiderancas += 1;
+      continue;
+    }
+    rows.push({
+      key: l.id,
+      nome: l.nome,
+      valor: l.quantidade_pessoas,
+      agregada: false,
+    });
+  }
+
+  if (marechalCidade && marechalLiderancas > 0) {
+    rows.push({
+      key: `cidade-${marechalCidade.id}`,
+      nome: marechalCidade.nome,
+      valor: marechalTotal,
+      agregada: true,
+    });
+  }
+
+  return rows.sort(
+    (a, b) => b.valor - a.valor || a.nome.localeCompare(b.nome, 'pt-BR'),
+  );
+}
+
 export interface RelatorioResumo {
   geradoEm: string;
   totalMunicipios: number;
@@ -145,6 +207,7 @@ export interface RelatorioResumo {
   liderancasPorCidade: CityMetric[];
   visitasAbertasPorCidade: CityMetric[];
   visitasRealizadasPorCidade: CityMetric[];
+  liderancasPorPessoas: LiderancaRelatorioRow[];
 }
 
 /** Snapshot completo para tela/PDF de relatório (todas as cidades com dado). */
@@ -170,5 +233,6 @@ export function buildRelatorioResumo(input: MetricsInput, agora: Date = new Date
     liderancasPorCidade: liderancasPorCidade(input, RELATORIO_TOP_N),
     visitasAbertasPorCidade: visitasEmAbertoPorCidade(input, RELATORIO_TOP_N, agora),
     visitasRealizadasPorCidade: cidadesMaisVisitadas(input, RELATORIO_TOP_N, agora),
+    liderancasPorPessoas: liderancasPorPessoasRelatorio(input),
   };
 }

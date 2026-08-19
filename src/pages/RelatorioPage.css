@@ -127,6 +127,16 @@
   text-align: right;
 }
 
+.relatorio-table-row--agregada td {
+  background: color-mix(in srgb, var(--cor-secundaria) 12%, var(--cor-fundo-painel));
+  color: var(--cor-texto);
+  font-weight: 700;
+}
+
+.relatorio-table-row--agregada td:last-child {
+  color: var(--cor-secundaria);
+}
+
 .relatorio-print-title {
   display: none;
   text-align: center;

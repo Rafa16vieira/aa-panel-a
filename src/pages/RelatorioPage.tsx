@@ -19,6 +19,13 @@ function formatNum(n: number): string {
   return n.toLocaleString('pt-BR');
 }
 
+interface LiderancaTableRow {
+  key: string;
+  nome: string;
+  valor: number;
+  agregada?: boolean;
+}
+
 interface MetricTableProps {
   title: string;
   description: string;
@@ -26,27 +33,38 @@ interface MetricTableProps {
   valueLabel: string;
 }
 
+interface LiderancasTableProps {
+  title: string;
+  description: string;
+  rows: LiderancaTableRow[];
+}
+
 function TableChunk({
   rows,
   startIndex,
   valueLabel,
+  nameColumnLabel = 'Município',
 }: {
-  rows: { nome: string; valor: number }[];
+  rows: LiderancaTableRow[];
   startIndex: number;
   valueLabel: string;
+  nameColumnLabel?: string;
 }) {
   return (
     <table className="relatorio-table">
       <thead>
         <tr>
           <th scope="col">#</th>
-          <th scope="col">Município</th>
+          <th scope="col">{nameColumnLabel}</th>
           <th scope="col">{valueLabel}</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((row, i) => (
-          <tr key={row.nome}>
+          <tr
+            key={row.key ?? row.nome}
+            className={row.agregada ? 'relatorio-table-row--agregada' : undefined}
+          >
             <td>{startIndex + i + 1}</td>
             <td>{row.nome}</td>
             <td>{formatNum(row.valor)}</td>
@@ -57,7 +75,19 @@ function TableChunk({
   );
 }
 
-function MetricTable({ title, description, rows, valueLabel }: MetricTableProps) {
+function RelatorioListSection({
+  title,
+  description,
+  rows,
+  valueLabel,
+  nameColumnLabel,
+}: {
+  title: string;
+  description: string;
+  rows: LiderancaTableRow[];
+  valueLabel: string;
+  nameColumnLabel?: string;
+}) {
   const splitAt = Math.ceil(rows.length / 2);
   const colA = rows.slice(0, splitAt);
   const colB = rows.slice(splitAt);
@@ -79,7 +109,12 @@ function MetricTable({ title, description, rows, valueLabel }: MetricTableProps)
         ) : (
           <>
             <div className="relatorio-table-wrap relatorio-table-wrap--screen">
-              <TableChunk rows={rows} startIndex={0} valueLabel={valueLabel} />
+              <TableChunk
+                rows={rows}
+                startIndex={0}
+                valueLabel={valueLabel}
+                nameColumnLabel={nameColumnLabel}
+              />
             </div>
             <div
               className={`relatorio-table-columns relatorio-table-columns--print${
@@ -87,11 +122,21 @@ function MetricTable({ title, description, rows, valueLabel }: MetricTableProps)
               }`}
             >
               <div className="relatorio-table-col">
-                <TableChunk rows={colA} startIndex={0} valueLabel={valueLabel} />
+                <TableChunk
+                  rows={colA}
+                  startIndex={0}
+                  valueLabel={valueLabel}
+                  nameColumnLabel={nameColumnLabel}
+                />
               </div>
               {colB.length > 0 && (
                 <div className="relatorio-table-col">
-                  <TableChunk rows={colB} startIndex={splitAt} valueLabel={valueLabel} />
+                  <TableChunk
+                    rows={colB}
+                    startIndex={splitAt}
+                    valueLabel={valueLabel}
+                    nameColumnLabel={nameColumnLabel}
+                  />
                 </div>
               )}
             </div>
@@ -99,6 +144,34 @@ function MetricTable({ title, description, rows, valueLabel }: MetricTableProps)
         )}
       </div>
     </section>
+  );
+}
+
+function MetricTable({ title, description, rows, valueLabel }: MetricTableProps) {
+  const tableRows: LiderancaTableRow[] = rows.map((r) => ({
+    key: r.nome,
+    nome: r.nome,
+    valor: r.valor,
+  }));
+  return (
+    <RelatorioListSection
+      title={title}
+      description={description}
+      rows={tableRows}
+      valueLabel={valueLabel}
+    />
+  );
+}
+
+function LiderancasPorPessoasTable({ title, description, rows }: LiderancasTableProps) {
+  return (
+    <RelatorioListSection
+      title={title}
+      description={description}
+      rows={rows}
+      valueLabel="Pessoas"
+      nameColumnLabel="Liderança"
+    />
   );
 }
 
@@ -170,6 +243,12 @@ export function RelatorioPage() {
           <span className="stat-label">Visitas em aberto</span>
         </div>
       </div>
+
+      <LiderancasPorPessoasTable
+        title="Lideranças por pessoas"
+        description="Ordenadas pela quantidade de pessoas; Marechal Deodoro exibido como total do município"
+        rows={relatorio.liderancasPorPessoas}
+      />
 
       <MetricTable
         title="Pessoas por cidade"
