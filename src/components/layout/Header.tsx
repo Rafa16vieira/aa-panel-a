@@ -1,17 +1,19 @@
+import { useSyncExternalStore } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { personalizar } from '../../theme/personalizar';
-import { getStorageMode } from '../../services/dataService';
+import { getStorageMode, subscribeStorageMode } from '../../services/dataService';
 import { useAuthStore } from '../../store/useAuthStore';
 import './Header.css';
 
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
-  const mode = getStorageMode();
+  const mode = useSyncExternalStore(subscribeStorageMode, getStorageMode, getStorageMode);
   const session = useAuthStore((s) => s.session);
   const logout = useAuthStore((s) => s.logout);
 
   const isInicio = location.pathname === '/';
+  const isRelatorio = location.pathname === '/relatorio';
   const isMapa = location.pathname === '/mapa';
   const isMapaCalor = location.pathname === '/mapa-de-calor';
   const isLiderancas = location.pathname.startsWith('/lideranca');
@@ -32,6 +34,9 @@ export function Header() {
       <nav className="app-header__nav">
         <Link to="/" className={isInicio ? 'active' : ''}>
           Início
+        </Link>
+        <Link to="/relatorio" className={isRelatorio ? 'active' : ''}>
+          Relatório
         </Link>
         <Link to="/mapa" className={isMapa ? 'active' : ''}>
           Mapa

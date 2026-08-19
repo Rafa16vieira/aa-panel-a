@@ -6,6 +6,7 @@ import {
   visitasEmAbertoPorCidade,
   cidadesMaisVisitadas,
   contagemCidadesComSemLideranca,
+  buildRelatorioResumo,
 } from '../utils/dashboardMetrics';
 import { isVisitaEmAberto, isVisitaRealizada, isVisitaAgendada } from '../utils/visitas';
 
@@ -119,5 +120,18 @@ describe('dashboardMetrics', () => {
     expect(result).toHaveLength(5);
     expect(result[0].valor).toBe(20);
     expect(result[4].valor).toBe(16);
+  });
+
+  it('buildRelatorioResumo agrega totais e tabelas completas', () => {
+    const agora = new Date('2026-08-10T12:00:00');
+    const rel = buildRelatorioResumo({ cidades, liderancas, visitas }, agora);
+    expect(rel.totalMunicipios).toBe(3);
+    expect(rel.totalLiderancas).toBe(4);
+    expect(rel.totalPessoas).toBe(38);
+    expect(rel.visitasRealizadas).toBe(1);
+    expect(rel.visitasAbertas).toBe(3);
+    expect(rel.cidadesComLideranca).toBe(3);
+    expect(rel.pessoasPorCidade).toHaveLength(3);
+    expect(rel.visitasRealizadasPorCidade).toHaveLength(1);
   });
 });

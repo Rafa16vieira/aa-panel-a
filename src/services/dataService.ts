@@ -6,7 +6,7 @@ import { getSupabase, isSupabaseConfigured } from './supabase';
 
 const STORAGE_KEY = 'painel-alagoas-local-data';
 const SEED_CHUNK_SIZE = 50;
-const CONNECT_TIMEOUT_MS = 8000;
+const CONNECT_TIMEOUT_MS = 20000;
 
 interface LocalStore {
   cidades: Cidade[];
@@ -28,6 +28,18 @@ const localListeners = new Set<Listener>();
 
 /** Quando true, força persistência local mesmo com Supabase no .env (ex.: falha de conexão). */
 let forceLocalMode = false;
+const modeListeners = new Set<() => void>();
+
+function notifyStorageMode() {
+  modeListeners.forEach((fn) => fn());
+}
+
+export function subscribeStorageMode(onStoreChange: () => void): Unsubscribe {
+  modeListeners.add(onStoreChange);
+  return () => {
+    modeListeners.delete(onStoreChange);
+  };
+}
 
 function loadLocalStore(): LocalStore {
   try {
@@ -189,6 +201,7 @@ export function subscribeData(onData: (data: AppData) => void): Unsubscribe {
     if (settled || unsubscribed) return;
     settled = true;
     forceLocalMode = true;
+    notifyStorageMode();
     console.warn('[painel-alagoas] Supabase indisponível — usando modo local.', reason);
     if (channel) {
       void getSupabase().removeChannel(channel);
@@ -216,11 +229,18 @@ export function subscribeData(onData: (data: AppData) => void): Unsubscribe {
     return list;
   };
 
+  let timeoutId = 0;
+
   void (async () => {
     try {
       const initial = await fetchAllTables();
       if (unsubscribed) return;
+      window.clearTimeout(timeoutId);
+      localUnsub?.();
+      localUnsub = undefined;
+      forceLocalMode = false;
       settled = true;
+      notifyStorageMode();
       cidades = initial.cidades;
       liderancas = initial.liderancas;
       visitas = initial.visitas;
@@ -258,7 +278,10 @@ export function subscribeData(onData: (data: AppData) => void): Unsubscribe {
         )
         .subscribe((status) => {
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            fallbackToLocal(new Error(`Realtime status: ${status}`));
+            console.warn(
+              '[painel-alagoas] Realtime indisponível; dados continuam no Supabase via REST.',
+              status,
+            );
           }
         });
     } catch (err) {
@@ -266,7 +289,7 @@ export function subscribeData(onData: (data: AppData) => void): Unsubscribe {
     }
   })();
 
-  const timeoutId = window.setTimeout(() => {
+  timeoutId = window.setTimeout(() => {
     if (!settled && !unsubscribed) {
       fallbackToLocal(new Error('Timeout ao conectar no Supabase'));
     }

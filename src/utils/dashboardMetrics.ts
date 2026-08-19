@@ -129,3 +129,46 @@ export function cidadesMaisVisitadas(
 
   return toTopMetrics(totals, nomes, topN);
 }
+
+export const RELATORIO_TOP_N = 999;
+
+export interface RelatorioResumo {
+  geradoEm: string;
+  totalMunicipios: number;
+  totalLiderancas: number;
+  totalPessoas: number;
+  visitasRealizadas: number;
+  visitasAbertas: number;
+  cidadesComLideranca: number;
+  cidadesSemLideranca: number;
+  pessoasPorCidade: CityMetric[];
+  liderancasPorCidade: CityMetric[];
+  visitasAbertasPorCidade: CityMetric[];
+  visitasRealizadasPorCidade: CityMetric[];
+}
+
+/** Snapshot completo para tela/PDF de relatório (todas as cidades com dado). */
+export function buildRelatorioResumo(input: MetricsInput, agora: Date = new Date()): RelatorioResumo {
+  const { comLideranca, semLideranca } = contagemCidadesComSemLideranca(input);
+  const visitasRealizadas = input.visitas.filter((v) =>
+    isVisitaRealizada(v.data_hora, agora),
+  ).length;
+  const visitasAbertas = input.visitas.filter((v) =>
+    isVisitaEmAberto(v.data_hora, agora),
+  ).length;
+
+  return {
+    geradoEm: agora.toISOString(),
+    totalMunicipios: input.cidades.length,
+    totalLiderancas: input.liderancas.length,
+    totalPessoas: input.liderancas.reduce((acc, l) => acc + l.quantidade_pessoas, 0),
+    visitasRealizadas,
+    visitasAbertas,
+    cidadesComLideranca: comLideranca,
+    cidadesSemLideranca: semLideranca,
+    pessoasPorCidade: pessoasPorCidade(input, RELATORIO_TOP_N),
+    liderancasPorCidade: liderancasPorCidade(input, RELATORIO_TOP_N),
+    visitasAbertasPorCidade: visitasEmAbertoPorCidade(input, RELATORIO_TOP_N, agora),
+    visitasRealizadasPorCidade: cidadesMaisVisitadas(input, RELATORIO_TOP_N, agora),
+  };
+}

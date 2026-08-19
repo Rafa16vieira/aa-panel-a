@@ -46,9 +46,14 @@ export function MainPage() {
             Indicadores por município — Top 15 com dados cadastrados
           </p>
         </div>
-        <Link to="/mapa" className="main-page__cta">
-          Abrir mapa
-        </Link>
+        <div className="main-page__actions">
+          <Link to="/mapa" className="main-page__cta">
+            Abrir mapa
+          </Link>
+          <Link to="/relatorio" className="main-page__cta main-page__cta--secondary">
+            Relatório
+          </Link>
+        </div>
       </header>
 
       <div className="dashboard-stats">

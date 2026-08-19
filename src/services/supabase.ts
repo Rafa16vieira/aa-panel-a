@@ -1,10 +1,17 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+function cleanEnv(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .trim();
+}
+
+const supabaseUrl = cleanEnv(import.meta.env.VITE_SUPABASE_URL);
+const supabaseAnonKey = cleanEnv(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(supabaseUrl?.trim() && supabaseAnonKey?.trim());
+  return Boolean(supabaseUrl && supabaseAnonKey);
 }
 
 let client: SupabaseClient | null = null;
@@ -16,7 +23,7 @@ export function getSupabase(): SupabaseClient {
     );
   }
   if (!client) {
-    client = createClient(supabaseUrl!, supabaseAnonKey!, {
+    client = createClient(supabaseUrl, supabaseAnonKey, {
       realtime: { params: { eventsPerSecond: 10 } },
     });
   }

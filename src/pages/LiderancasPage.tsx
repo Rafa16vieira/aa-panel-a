@@ -110,6 +110,9 @@ export function LiderancasPage() {
             Nº de pessoas
           </button>
         </div>
+        <Link to="/lideranca/nova" className="liderancas-btn-nova">
+          Nova liderança
+        </Link>
       </div>
 
       {/* Summary */}

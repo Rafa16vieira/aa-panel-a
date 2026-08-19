@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { HeatmapPage } from './pages/HeatmapPage';
 import { LiderancaFormPage } from './pages/LiderancaFormPage';
 import { LiderancasPage } from './pages/LiderancasPage';
+import { RelatorioPage } from './pages/RelatorioPage';
 import { LoginPage } from './pages/LoginPage';
 import { AguardandoAprovacaoPage } from './pages/AguardandoAprovacaoPage';
 import { AlterarSenhaPage } from './pages/AlterarSenhaPage';
@@ -23,6 +24,7 @@ function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route element={<DashboardLayout />}>
           <Route path="/" element={<MainPage />} />
+          <Route path="/relatorio" element={<RelatorioPage />} />
           <Route path="/mapa" element={<DashboardPage />} />
           <Route path="/mapa-de-calor" element={<HeatmapPage />} />
           <Route path="/liderancas" element={<LiderancasPage />} />

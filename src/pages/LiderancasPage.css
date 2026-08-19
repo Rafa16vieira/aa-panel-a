@@ -88,7 +88,24 @@
   border-color: var(--cor-primaria);
 }
 
-/* Summary bar */
+.liderancas-btn-nova {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--cor-primaria);
+  color: var(--cor-texto-claro);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+
+.liderancas-btn-nova:hover {
+  opacity: 0.92;
+}
+
 .liderancas-summary {
   font-size: 0.85rem;
   color: var(--cor-texto-secundario);

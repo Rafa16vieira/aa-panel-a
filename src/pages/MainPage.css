@@ -43,6 +43,19 @@
   transform: translateY(-1px);
 }
 
+.main-page__cta--secondary {
+  background: var(--cor-fundo-painel);
+  color: var(--cor-primaria);
+  border: 1px solid var(--cor-borda);
+}
+
+.main-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
 .main-page__loading {
   display: flex;
   align-items: center;

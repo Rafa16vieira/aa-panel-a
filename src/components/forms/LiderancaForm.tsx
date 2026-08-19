@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useMemo, type FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { saveLideranca, deleteLideranca } from '../../services/dataService';
@@ -36,7 +36,6 @@ export function LiderancaForm() {
   const [quantidadePessoas, setQuantidadePessoas] = useState(0);
   const [responsavel, setResponsavel] = useState(RESPONSAVEL_PADRAO);
   const [visitasForm, setVisitasForm] = useState<VisitaFormRow[]>([]);
-  const [buscaCidade, setBuscaCidade] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -63,8 +62,9 @@ export function LiderancaForm() {
     }
   }, [id, isEditing, liderancas, visitas]);
 
-  const cidadesFiltradas = cidades.filter((c) =>
-    c.nome.toLowerCase().includes(buscaCidade.toLowerCase()),
+  const cidadesOrdenadas = useMemo(
+    () => [...cidades].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+    [cidades],
   );
 
   function updateVisita(key: string, patch: Partial<VisitaFormRow>) {
@@ -143,21 +143,14 @@ export function LiderancaForm() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="busca-cidade">Cidade *</label>
-          <input
-            id="busca-cidade"
-            type="text"
-            value={buscaCidade}
-            onChange={(e) => setBuscaCidade(e.target.value)}
-            placeholder="Buscar cidade..."
-          />
+          <label htmlFor="cidade">Cidade *</label>
           <select
             id="cidade"
             value={cidadeId}
             onChange={(e) => setCidadeId(e.target.value)}
           >
             <option value="">Selecione uma cidade</option>
-            {cidadesFiltradas.map((c) => (
+            {cidadesOrdenadas.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.nome}
               </option>
