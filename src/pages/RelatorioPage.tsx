@@ -71,31 +71,33 @@ function MetricTable({ title, description, rows, valueLabel }: MetricTableProps)
 
   return (
     <section className={`relatorio-section${densityClass}`}>
-      <h3 className="relatorio-section__title">{title}</h3>
-      <p className="relatorio-section__desc">{description}</p>
-      {rows.length === 0 ? (
-        <p className="relatorio-empty">Sem dados para exibir.</p>
-      ) : (
-        <>
-          <div className="relatorio-table-wrap relatorio-table-wrap--screen">
-            <TableChunk rows={rows} startIndex={0} valueLabel={valueLabel} />
-          </div>
-          <div
-            className={`relatorio-table-columns relatorio-table-columns--print${
-              colB.length === 0 ? ' relatorio-table-columns--single' : ''
-            }`}
-          >
-            <div className="relatorio-table-col">
-              <TableChunk rows={colA} startIndex={0} valueLabel={valueLabel} />
+      <div className="relatorio-section__print-unit">
+        <h3 className="relatorio-section__title">{title}</h3>
+        <p className="relatorio-section__desc">{description}</p>
+        {rows.length === 0 ? (
+          <p className="relatorio-empty">Sem dados para exibir.</p>
+        ) : (
+          <>
+            <div className="relatorio-table-wrap relatorio-table-wrap--screen">
+              <TableChunk rows={rows} startIndex={0} valueLabel={valueLabel} />
             </div>
-            {colB.length > 0 && (
+            <div
+              className={`relatorio-table-columns relatorio-table-columns--print${
+                colB.length === 0 ? ' relatorio-table-columns--single' : ''
+              }`}
+            >
               <div className="relatorio-table-col">
-                <TableChunk rows={colB} startIndex={splitAt} valueLabel={valueLabel} />
+                <TableChunk rows={colA} startIndex={0} valueLabel={valueLabel} />
               </div>
-            )}
-          </div>
-        </>
-      )}
+              {colB.length > 0 && (
+                <div className="relatorio-table-col">
+                  <TableChunk rows={colB} startIndex={splitAt} valueLabel={valueLabel} />
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </section>
   );
 }

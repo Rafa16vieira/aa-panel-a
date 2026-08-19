@@ -62,6 +62,10 @@
   box-shadow: 0 2px 8px var(--cor-sombra);
 }
 
+.relatorio-section__print-unit {
+  display: block;
+}
+
 .relatorio-section__title {
   margin: 0 0 4px;
   font-size: 1.05rem;
@@ -191,25 +195,30 @@
   }
 
   .relatorio-section {
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 0;
+    border: none;
+    background: transparent;
+  }
+
+  .relatorio-section__print-unit {
     break-inside: avoid;
     page-break-inside: avoid;
-    box-shadow: none;
+    -webkit-column-break-inside: avoid;
     padding: 10px 12px;
-    margin-bottom: 0;
+    orphans: 100;
+    widows: 100;
   }
 
   .relatorio-section__title {
     font-size: 0.95rem;
     margin-bottom: 2px;
-    break-after: avoid;
-    page-break-after: avoid;
   }
 
   .relatorio-section__desc {
     font-size: 0.72rem;
     margin-bottom: 8px;
-    break-after: avoid;
-    page-break-after: avoid;
   }
 
   .relatorio-table-wrap--screen {
@@ -221,8 +230,6 @@
     grid-template-columns: 1fr 1fr;
     gap: 10px;
     align-items: start;
-    break-inside: avoid;
-    page-break-inside: avoid;
   }
 
   .relatorio-table-columns--print.relatorio-table-columns--single {
@@ -231,14 +238,10 @@
 
   .relatorio-table-col {
     min-width: 0;
-    break-inside: avoid;
-    page-break-inside: avoid;
   }
 
   .relatorio-table {
     font-size: 0.68rem;
-    break-inside: avoid;
-    page-break-inside: avoid;
   }
 
   .relatorio-table thead {
