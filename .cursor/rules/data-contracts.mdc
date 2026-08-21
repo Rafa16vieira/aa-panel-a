@@ -16,6 +16,7 @@ Fonte da verdade: `src/types/index.ts`. Store, services e forms devem aderir a e
 - `AuthSession` / `UsuarioPublico`: login por usuário e senha; conta só entra após `aprovado`. Admin gerencia usuários.
 - Sem agendamento / data futura → visita **em aberto** até a data ser anterior ao momento atual
 - Visita **realizada** → `data_hora` preenchida e já passada (usada em “cidades mais visitadas”)
+- Visitas `agenda-*` removidas no formulário entram em `agenda_visitas_bloqueadas` e **não** são recriadas pelo sync da agenda (app ou job diário).
 
 ## Status de município (`CidadeStatus`)
 

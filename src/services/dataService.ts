@@ -1,10 +1,11 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { Cidade, Lideranca, Visita, LiderancaInput, VisitaInput } from '../types';
 import { RESPONSAVEL_PADRAO } from '../types';
-import { AGENDA_VISITA_PREFIX, idsAgendaParaRemover, isVisitaAgenda } from '../utils/agendaCampanha';
+import { AGENDA_VISITA_PREFIX, filtrarVisitasAgendaNaoBloqueadas, idsAgendaParaRemover, isVisitaAgenda } from '../utils/agendaCampanha';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 
 const STORAGE_KEY = 'painel-alagoas-local-data';
+const AGENDA_BLOQUEADAS_KEY = 'painel-alagoas-agenda-bloqueadas';
 const SEED_CHUNK_SIZE = 50;
 const CONNECT_TIMEOUT_MS = 20000;
 
@@ -12,6 +13,8 @@ interface LocalStore {
   cidades: Cidade[];
   liderancas: Lideranca[];
   visitas: Visita[];
+  /** IDs agenda-* removidos manualmente — sync não recria. */
+  agendaBloqueadas: string[];
 }
 
 export type AppData = {
@@ -23,7 +26,7 @@ export type AppData = {
 type Listener = (data: LocalStore) => void;
 type Unsubscribe = () => void;
 
-let localStore: LocalStore = { cidades: [], liderancas: [], visitas: [] };
+let localStore: LocalStore = { cidades: [], liderancas: [], visitas: [], agendaBloqueadas: [] };
 const localListeners = new Set<Listener>();
 
 /** Quando true, força persistência local mesmo com Supabase no .env (ex.: falha de conexão). */
@@ -44,15 +47,39 @@ export function subscribeStorageMode(onStoreChange: () => void): Unsubscribe {
 function loadLocalStore(): LocalStore {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as LocalStore;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<LocalStore>;
+      return {
+        cidades: parsed.cidades ?? [],
+        liderancas: parsed.liderancas ?? [],
+        visitas: parsed.visitas ?? [],
+        agendaBloqueadas: Array.isArray(parsed.agendaBloqueadas)
+          ? parsed.agendaBloqueadas
+          : loadAgendaBloqueadasLegacy(),
+      };
+    }
   } catch {
     /* ignore */
   }
-  return { cidades: [], liderancas: [], visitas: [] };
+  return { cidades: [], liderancas: [], visitas: [], agendaBloqueadas: loadAgendaBloqueadasLegacy() };
+}
+
+function loadAgendaBloqueadasLegacy(): string[] {
+  try {
+    const raw = localStorage.getItem(AGENDA_BLOQUEADAS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) return parsed.filter((id): id is string => typeof id === 'string');
+    }
+  } catch {
+    /* ignore */
+  }
+  return [];
 }
 
 function saveLocalStore() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(localStore));
+  localStorage.setItem(AGENDA_BLOQUEADAS_KEY, JSON.stringify(localStore.agendaBloqueadas));
   localListeners.forEach((fn) => fn(localStore));
 }
 
@@ -87,15 +114,48 @@ function normalizeVisitas(liderancaId: string, inputs: VisitaInput[]): Visita[] 
   }));
 }
 
+function mergeAgendaBloqueadasLocal(ids: string[]): void {
+  if (ids.length === 0) return;
+  const set = new Set(localStore.agendaBloqueadas);
+  for (const id of ids) set.add(id);
+  localStore.agendaBloqueadas = Array.from(set);
+}
+
+async function fetchAgendaBloqueadas(): Promise<Set<string>> {
+  if (isSupabaseActive()) {
+    const { data, error } = await getSupabase().from('agenda_visitas_bloqueadas').select('id');
+    if (error) throw error;
+    return new Set((data ?? []).map((row) => row.id as string));
+  }
+  return new Set(localStore.agendaBloqueadas);
+}
+
+async function persistAgendaBloqueadas(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  if (isSupabaseActive()) {
+    const { error } = await getSupabase()
+      .from('agenda_visitas_bloqueadas')
+      .upsert(ids.map((id) => ({ id })));
+    if (error) throw error;
+  } else {
+    mergeAgendaBloqueadasLocal(ids);
+  }
+}
+
 function syncVisitasLocal(liderancaId: string, inputs: VisitaInput[]): void {
   const desired = normalizeVisitas(liderancaId, inputs);
   const desiredIds = new Set(desired.map((v) => v.id));
-  localStore.visitas = [
-    ...localStore.visitas.filter(
+  const removidasAgenda = localStore.visitas
+    .filter(
       (v) =>
-        v.lideranca_id !== liderancaId ||
-        (isVisitaAgenda(v.id) && !desiredIds.has(v.id)),
-    ),
+        v.lideranca_id === liderancaId &&
+        isVisitaAgenda(v.id) &&
+        !desiredIds.has(v.id),
+    )
+    .map((v) => v.id);
+  mergeAgendaBloqueadasLocal(removidasAgenda);
+  localStore.visitas = [
+    ...localStore.visitas.filter((v) => v.lideranca_id !== liderancaId),
     ...desired,
   ];
 }
@@ -142,9 +202,11 @@ async function syncVisitasSupabase(liderancaId: string, inputs: VisitaInput[]): 
 
   if (listError) throw listError;
 
-  const toDelete = (existing ?? [])
-    .map((row) => row.id as string)
-    .filter((id) => !desiredIds.has(id) && !isVisitaAgenda(id));
+  const existingIds = (existing ?? []).map((row) => row.id as string);
+  const toDelete = existingIds.filter((id) => !desiredIds.has(id));
+  const removidasAgenda = toDelete.filter((id) => isVisitaAgenda(id));
+
+  await persistAgendaBloqueadas(removidasAgenda);
 
   if (toDelete.length > 0) {
     const { error: delError } = await sb.from('visitas').delete().in('id', toDelete);
@@ -357,9 +419,12 @@ export function getStorageMode(): 'supabase' | 'local' {
   return isSupabaseActive() ? 'supabase' : 'local';
 }
 
-/** Atualiza visitas da agenda; mantém as já realizadas se saírem da pauta. */
+/** Atualiza visitas da agenda; mantém as já realizadas se saírem da pauta.
+ * Não recria IDs bloqueados após remoção manual. */
 export async function replaceAgendaVisitas(visitas: Visita[]): Promise<void> {
-  const ids = new Set(visitas.map((v) => v.id));
+  const bloqueadas = await fetchAgendaBloqueadas();
+  const visitasPermitidas = filtrarVisitasAgendaNaoBloqueadas(visitas, bloqueadas);
+  const ids = new Set(visitasPermitidas.map((v) => v.id));
 
   if (isSupabaseActive()) {
     const sb = getSupabase();
@@ -376,9 +441,9 @@ export async function replaceAgendaVisitas(visitas: Visita[]): Promise<void> {
       if (delError) throw delError;
     }
 
-    if (visitas.length > 0) {
+    if (visitasPermitidas.length > 0) {
       const { error: upsertError } = await sb.from('visitas').upsert(
-        visitas.map((v) => ({
+        visitasPermitidas.map((v) => ({
           id: v.id,
           lideranca_id: v.lideranca_id,
           data_hora: v.data_hora,
@@ -391,7 +456,7 @@ export async function replaceAgendaVisitas(visitas: Visita[]): Promise<void> {
     const toDelete = new Set(idsAgendaParaRemover(localStore.visitas, ids));
     localStore.visitas = [
       ...localStore.visitas.filter((v) => !ids.has(v.id) && !toDelete.has(v.id)),
-      ...visitas,
+      ...visitasPermitidas,
     ];
     saveLocalStore();
   }

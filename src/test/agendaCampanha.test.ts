@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  filtrarVisitasAgendaNaoBloqueadas,
   idsAgendaParaRemover,
   matchLideranca,
   montarVisitasAgenda,
@@ -116,5 +117,20 @@ describe('agenda campanha', () => {
     const naPauta = new Set<string>();
     expect(idsAgendaParaRemover(existentes, naPauta, agora)).toEqual(['agenda-futura']);
     expect(idsAgendaParaRemover(existentes, new Set(['agenda-futura']), agora)).toEqual([]);
+  });
+
+  it('não inclui visitas bloqueadas após remoção manual', () => {
+    const visitas = [
+      { id: 'agenda-a', lideranca_id: 'l1' },
+      { id: 'agenda-b', lideranca_id: 'l2' },
+      { id: 'agenda-c', lideranca_id: 'l3' },
+    ];
+    expect(filtrarVisitasAgendaNaoBloqueadas(visitas, ['agenda-b']).map((v) => v.id)).toEqual([
+      'agenda-a',
+      'agenda-c',
+    ]);
+    expect(filtrarVisitasAgendaNaoBloqueadas(visitas, new Set(['agenda-a', 'agenda-c']))).toEqual([
+      { id: 'agenda-b', lideranca_id: 'l2' },
+    ]);
   });
 });

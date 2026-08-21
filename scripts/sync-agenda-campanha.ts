@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import {
   AGENDA_DOC_EXPORT_URL,
   AGENDA_VISITA_PREFIX,
+  filtrarVisitasAgendaNaoBloqueadas,
   idsAgendaParaRemover,
   montarVisitasAgenda,
   parseAgendaCampanha,
@@ -54,13 +55,25 @@ if (semMatch.length > 0) {
   console.warn('sem match:', semMatch.join(' | '));
 }
 
+const { data: bloqueadasRows, error: bloqueadasError } = await sb
+  .from('agenda_visitas_bloqueadas')
+  .select('id');
+if (bloqueadasError) throw bloqueadasError;
+const bloqueadas = new Set((bloqueadasRows ?? []).map((r) => r.id as string));
+const visitasPermitidas = filtrarVisitasAgendaNaoBloqueadas(visitas, bloqueadas);
+if (bloqueadas.size > 0) {
+  console.log(
+    `bloqueadas (remoção manual): ${bloqueadas.size}; sync fará upsert de ${visitasPermitidas.length}`,
+  );
+}
+
 const { data: existing, error: listError } = await sb
   .from('visitas')
   .select('id,data_hora')
   .like('id', `${AGENDA_VISITA_PREFIX}%`);
 if (listError) throw listError;
 
-const ids = new Set(visitas.map((v) => v.id));
+const ids = new Set(visitasPermitidas.map((v) => v.id));
 const toDelete = idsAgendaParaRemover(existing ?? [], ids);
 
 if (toDelete.length > 0) {
@@ -69,8 +82,8 @@ if (toDelete.length > 0) {
   console.log(`removidas: ${toDelete.length}`);
 }
 
-if (visitas.length > 0) {
-  const { error } = await sb.from('visitas').upsert(visitas);
+if (visitasPermitidas.length > 0) {
+  const { error } = await sb.from('visitas').upsert(visitasPermitidas);
   if (error) throw error;
 }
 

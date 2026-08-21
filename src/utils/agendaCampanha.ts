@@ -235,6 +235,16 @@ export function isVisitaAgenda(id: string): boolean {
   return id.startsWith(AGENDA_VISITA_PREFIX);
 }
 
+/** Remove da pauta de sync as visitas cuja remoção manual foi registrada. */
+export function filtrarVisitasAgendaNaoBloqueadas<T extends { id: string }>(
+  visitas: T[],
+  bloqueadas: Iterable<string>,
+): T[] {
+  const set = bloqueadas instanceof Set ? bloqueadas : new Set(bloqueadas);
+  if (set.size === 0) return visitas;
+  return visitas.filter((v) => !set.has(v.id));
+}
+
 /**
  * Compromissos da agenda que saíram da pauta e ainda não aconteceram.
  * Visitas com data já passada permanecem no registro.
