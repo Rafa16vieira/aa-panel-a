@@ -9,7 +9,7 @@ import {
   visitasEmAbertoPorCidade,
   cidadesMaisVisitadas,
 } from '../utils/dashboardMetrics';
-import { isVisitaEmAberto, isVisitaRealizada } from '../utils/visitas';
+import { isVisitaEmAbertoContabilizada, isVisitaRealizadaContabilizada } from '../utils/visitas';
 import './MainPage.css';
 
 export function MainPage() {
@@ -30,8 +30,10 @@ export function MainPage() {
 
   const cores = personalizar.cores;
   const comLideranca = liderancas.length;
-  const visitasRealizadas = visitas.filter((v) => isVisitaRealizada(v.data_hora)).length;
-  const visitasAbertas = visitas.filter((v) => isVisitaEmAberto(v.data_hora)).length;
+  const visitasRealizadas = visitas.filter((v) =>
+    isVisitaRealizadaContabilizada(v.data_hora),
+  ).length;
+  const visitasAbertas = visitas.filter((v) => isVisitaEmAbertoContabilizada(v.data_hora)).length;
 
   if (isLoading) {
     return <div className="main-page__loading">Carregando dados...</div>;

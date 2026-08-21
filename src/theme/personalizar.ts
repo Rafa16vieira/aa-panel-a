@@ -46,7 +46,7 @@ export const personalizar = {
     /** Cor de município COM liderança cadastrada no mapa */
     municipioComLideranca: '#2D8A4E',
 
-    /** Cor de município com visita realizada nos últimos 30 dias (verde mais escuro) */
+    /** Cor de município já visitado (a partir de 16/08/2026; verde mais escuro) */
     municipioVisitaRecente: '#07361b',
 
     /** Cor de município SEM liderança cadastrada no mapa */

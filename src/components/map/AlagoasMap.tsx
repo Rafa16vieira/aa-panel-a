@@ -5,7 +5,11 @@ import type { GeoJsonObject } from 'geojson';
 import { useAppStore } from '../../store/useAppStore';
 import { personalizar } from '../../theme/personalizar';
 import type { CidadeStatus } from '../../types';
-import { isVisitaAgendada, isVisitaEmAberto, isVisitaRealizada } from '../../utils/visitas';
+import {
+  isVisitaAgendadaContabilizada,
+  isVisitaEmAbertoContabilizada,
+  isVisitaRealizadaContabilizada,
+} from '../../utils/visitas';
 import {
   corCoberturaHeatmap,
   formatTaxaPercent,
@@ -169,9 +173,15 @@ export function AlagoasMap({ viewMode = 'status' }: AlagoasMapProps) {
           const totalPessoas = lids.reduce((acc, l) => acc + l.quantidade_pessoas, 0);
           const eleitorado = eleitoradoPorMunicipio[id] ?? 0;
           const taxa = taxaCobertura(totalPessoas, eleitorado);
-          const realizadas = visitasCidade.filter((v) => isVisitaRealizada(v.data_hora)).length;
-          const abertas = visitasCidade.filter((v) => isVisitaEmAberto(v.data_hora)).length;
-          const agendadas = visitasCidade.filter((v) => isVisitaAgendada(v.data_hora)).length;
+          const realizadas = visitasCidade.filter((v) =>
+            isVisitaRealizadaContabilizada(v.data_hora),
+          ).length;
+          const abertas = visitasCidade.filter((v) =>
+            isVisitaEmAbertoContabilizada(v.data_hora),
+          ).length;
+          const agendadas = visitasCidade.filter((v) =>
+            isVisitaAgendadaContabilizada(v.data_hora),
+          ).length;
           const liderancaTexto =
             lids.length === 0
               ? 'Sem liderança'
@@ -245,7 +255,7 @@ export function AlagoasMap({ viewMode = 'status' }: AlagoasMapProps) {
           </span>
           <span className="legend-item">
             <i style={{ background: personalizar.cores.municipioVisitaRecente }} />
-            Visita nos últimos 30 dias
+            Cidade já visitada
           </span>
           <span className="legend-item">
             <i style={{ background: personalizar.cores.municipioVisitaAgendada }} />

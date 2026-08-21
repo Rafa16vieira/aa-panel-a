@@ -1,5 +1,5 @@
 import type { Cidade, Lideranca, Visita } from '../types';
-import { isVisitaEmAberto, isVisitaRealizada } from './visitas';
+import { isVisitaEmAbertoContabilizada, isVisitaRealizadaContabilizada } from './visitas';
 
 export interface CityMetric {
   cidadeId: string;
@@ -98,7 +98,7 @@ export function visitasEmAbertoPorCidade(
   const totals = new Map<string, number>();
 
   for (const v of visitas) {
-    if (!isVisitaEmAberto(v.data_hora, agora)) continue;
+    if (!isVisitaEmAbertoContabilizada(v.data_hora, agora)) continue;
     const cidadeId = liderancaCidade.get(v.lideranca_id);
     if (!cidadeId) continue;
     totals.set(cidadeId, (totals.get(cidadeId) ?? 0) + 1);
@@ -121,7 +121,7 @@ export function cidadesMaisVisitadas(
   const totals = new Map<string, number>();
 
   for (const v of visitas) {
-    if (!isVisitaRealizada(v.data_hora, agora)) continue;
+    if (!isVisitaRealizadaContabilizada(v.data_hora, agora)) continue;
     const cidadeId = liderancaCidade.get(v.lideranca_id);
     if (!cidadeId) continue;
     totals.set(cidadeId, (totals.get(cidadeId) ?? 0) + 1);
@@ -214,10 +214,10 @@ export interface RelatorioResumo {
 export function buildRelatorioResumo(input: MetricsInput, agora: Date = new Date()): RelatorioResumo {
   const { comLideranca, semLideranca } = contagemCidadesComSemLideranca(input);
   const visitasRealizadas = input.visitas.filter((v) =>
-    isVisitaRealizada(v.data_hora, agora),
+    isVisitaRealizadaContabilizada(v.data_hora, agora),
   ).length;
   const visitasAbertas = input.visitas.filter((v) =>
-    isVisitaEmAberto(v.data_hora, agora),
+    isVisitaEmAbertoContabilizada(v.data_hora, agora),
   ).length;
 
   return {

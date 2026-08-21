@@ -50,12 +50,29 @@ describe('Store — gestão de lideranças (N por cidade, N visitas)', () => {
     expect(useAppStore.getState().getCidadeStatus('2704302')).toBe('com_lideranca');
   });
 
-  it('marca visita_recente quando houve visita nos últimos 30 dias', () => {
-    const recente = new Date();
-    recente.setDate(recente.getDate() - 5);
+  it('marca visita_recente (cidade já visitada) a partir de 16/08/2026', () => {
     useAppStore.setState({
       liderancas: [{ id: 'l1', nome: 'João', cidade_id: '2704302', quantidade_pessoas: 10, responsavel: 'NTR' }],
-      visitas: [{ id: 'v1', lideranca_id: 'l1', data_hora: recente.toISOString(), observacoes: '' }],
+      visitas: [{ id: 'v1', lideranca_id: 'l1', data_hora: '2026-08-17T14:00:00', observacoes: '' }],
+    });
+    expect(useAppStore.getState().getCidadeStatus('2704302')).toBe('visita_recente');
+  });
+
+  it('ignora visita realizada antes de 16/08/2026 no status', () => {
+    useAppStore.setState({
+      liderancas: [{ id: 'l1', nome: 'João', cidade_id: '2704302', quantidade_pessoas: 10, responsavel: 'NTR' }],
+      visitas: [{ id: 'v1', lideranca_id: 'l1', data_hora: '2026-08-10T10:00:00', observacoes: '' }],
+    });
+    expect(useAppStore.getState().getCidadeStatus('2704302')).toBe('com_lideranca');
+  });
+
+  it('não marca visita_agendada se a cidade já foi visitada no período', () => {
+    useAppStore.setState({
+      liderancas: [{ id: 'l1', nome: 'João', cidade_id: '2704302', quantidade_pessoas: 10, responsavel: 'NTR' }],
+      visitas: [
+        { id: 'v1', lideranca_id: 'l1', data_hora: '2026-08-17T10:00:00', observacoes: '' },
+        { id: 'v2', lideranca_id: 'l1', data_hora: '2099-09-01T14:00:00', observacoes: '' },
+      ],
     });
     expect(useAppStore.getState().getCidadeStatus('2704302')).toBe('visita_recente');
   });

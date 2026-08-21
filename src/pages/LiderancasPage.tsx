@@ -1,7 +1,11 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
-import { isVisitaAgendada, isVisitaEmAberto, isVisitaRealizada } from '../utils/visitas';
+import {
+  isVisitaAgendadaContabilizada,
+  isVisitaEmAbertoContabilizada,
+  isVisitaRealizadaContabilizada,
+} from '../utils/visitas';
 import './LiderancasPage.css';
 
 type OrdemType = 'cidade' | 'pessoas';
@@ -150,9 +154,15 @@ export function LiderancasPage() {
 
           {lids.map((lideranca) => {
             const liderancaVisitas = visitasPorLideranca.get(lideranca.id) ?? [];
-            const abertas = liderancaVisitas.filter((v) => isVisitaEmAberto(v.data_hora));
-            const realizadas = liderancaVisitas.filter((v) => isVisitaRealizada(v.data_hora));
-            const agendadas = liderancaVisitas.filter((v) => isVisitaAgendada(v.data_hora));
+            const abertas = liderancaVisitas.filter((v) =>
+              isVisitaEmAbertoContabilizada(v.data_hora),
+            );
+            const realizadas = liderancaVisitas.filter((v) =>
+              isVisitaRealizadaContabilizada(v.data_hora),
+            );
+            const agendadas = liderancaVisitas.filter((v) =>
+              isVisitaAgendadaContabilizada(v.data_hora),
+            );
 
             return (
               <div key={lideranca.id} className="lideranca-card">

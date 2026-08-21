@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import type { Cidade, Lideranca, Visita, CidadeComDados, CidadeStatus } from '../types';
-import { isVisitaAgendada, isVisitaNosUltimosDias } from '../utils/visitas';
+import {
+  isVisitaAgendadaContabilizada,
+  isVisitaRealizadaContabilizada,
+} from '../utils/visitas';
 
 interface AppState {
   cidades: Cidade[];
@@ -66,10 +69,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const liderancaIds = new Set(liderancas.map((l) => l.id));
     const visitasCidade = get().visitas.filter((v) => liderancaIds.has(v.lideranca_id));
 
-    if (visitasCidade.some((v) => isVisitaNosUltimosDias(v.data_hora))) {
+    // Cidade já visitada (a partir de 16/08/2026) prevalece sobre agendamento futuro.
+    if (visitasCidade.some((v) => isVisitaRealizadaContabilizada(v.data_hora))) {
       return 'visita_recente';
     }
-    if (visitasCidade.some((v) => isVisitaAgendada(v.data_hora))) {
+    if (visitasCidade.some((v) => isVisitaAgendadaContabilizada(v.data_hora))) {
       return 'visita_agendada';
     }
     return 'com_lideranca';

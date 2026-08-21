@@ -9,9 +9,16 @@ import {
   buildRelatorioResumo,
   liderancasPorPessoasRelatorio,
 } from '../utils/dashboardMetrics';
-import { isVisitaEmAberto, isVisitaRealizada, isVisitaAgendada } from '../utils/visitas';
+import {
+  isVisitaEmAberto,
+  isVisitaRealizada,
+  isVisitaAgendada,
+  isVisitaContabilizada,
+  isVisitaRealizadaContabilizada,
+  isVisitaEmAbertoContabilizada,
+} from '../utils/visitas';
 
-const agora = new Date('2026-08-10T12:00:00');
+const agora = new Date('2026-08-21T12:00:00');
 
 const cidades: Cidade[] = [
   { id: 'c1', nome: 'Maceió' },
@@ -26,24 +33,34 @@ const liderancas: Lideranca[] = [
   { id: 'l4', nome: 'D', cidade_id: 'c3', quantidade_pessoas: 3, responsavel: 'NTR' },
 ];
 
-/** v1 null aberto; v2 passado; v3 null aberto; v4 futuro aberto */
+/** v1 null aberto; v2 passado (≥16/08); v3 null aberto; v4 futuro aberto */
 const visitas: Visita[] = [
   { id: 'v1', lideranca_id: 'l1', data_hora: null, observacoes: '' },
-  { id: 'v2', lideranca_id: 'l2', data_hora: '2026-08-09T14:00:00', observacoes: '' },
+  { id: 'v2', lideranca_id: 'l2', data_hora: '2026-08-17T14:00:00', observacoes: '' },
   { id: 'v3', lideranca_id: 'l3', data_hora: null, observacoes: '' },
-  { id: 'v4', lideranca_id: 'l4', data_hora: '2026-08-11T10:00:00', observacoes: '' },
+  { id: 'v4', lideranca_id: 'l4', data_hora: '2026-08-25T10:00:00', observacoes: '' },
 ];
 
 describe('visitas status helpers', () => {
   it('classifica aberto / realizado / agendado', () => {
     expect(isVisitaEmAberto(null, agora)).toBe(true);
-    expect(isVisitaEmAberto('2026-08-11T10:00:00', agora)).toBe(true);
-    expect(isVisitaEmAberto('2026-08-09T10:00:00', agora)).toBe(false);
-    expect(isVisitaRealizada('2026-08-09T10:00:00', agora)).toBe(true);
+    expect(isVisitaEmAberto('2026-08-25T10:00:00', agora)).toBe(true);
+    expect(isVisitaEmAberto('2026-08-17T10:00:00', agora)).toBe(false);
+    expect(isVisitaRealizada('2026-08-17T10:00:00', agora)).toBe(true);
     expect(isVisitaRealizada(null, agora)).toBe(false);
-    expect(isVisitaRealizada('2026-08-11T10:00:00', agora)).toBe(false);
-    expect(isVisitaAgendada('2026-08-11T10:00:00', agora)).toBe(true);
+    expect(isVisitaRealizada('2026-08-25T10:00:00', agora)).toBe(false);
+    expect(isVisitaAgendada('2026-08-25T10:00:00', agora)).toBe(true);
     expect(isVisitaAgendada(null, agora)).toBe(false);
+  });
+
+  it('só contabiliza visitas a partir de 16/08/2026', () => {
+    expect(isVisitaContabilizada(null)).toBe(true);
+    expect(isVisitaContabilizada('2026-08-16T00:00:00')).toBe(true);
+    expect(isVisitaContabilizada('2026-08-15T23:59:59')).toBe(false);
+    expect(isVisitaRealizadaContabilizada('2026-08-10T10:00:00', agora)).toBe(false);
+    expect(isVisitaRealizadaContabilizada('2026-08-17T10:00:00', agora)).toBe(true);
+    expect(isVisitaEmAbertoContabilizada('2026-08-10T10:00:00', agora)).toBe(false);
+    expect(isVisitaEmAbertoContabilizada(null, agora)).toBe(true);
   });
 });
 
@@ -68,24 +85,25 @@ describe('dashboardMetrics', () => {
     expect(result.find((r) => r.cidadeId === 'c3')?.valor).toBe(1); // futuro
   });
 
-  it('cidadesMaisVisitadas só conta visitas já realizadas', () => {
+  it('cidadesMaisVisitadas só conta visitas já realizadas no período', () => {
     const result = cidadesMaisVisitadas({ cidades, liderancas, visitas }, 15, agora);
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({ cidadeId: 'c1', valor: 1 });
   });
 
-  it('não inclui visitas em aberto em cidadesMaisVisitadas', () => {
+  it('ignora visitas antes de 16/08 e em aberto em cidadesMaisVisitadas', () => {
     const extraVisitas = [
       ...visitas,
       { id: 'v5', lideranca_id: 'l1', data_hora: '2026-09-01T09:00:00', observacoes: '' },
-      { id: 'v6', lideranca_id: 'l1', data_hora: '2026-07-15T09:00:00', observacoes: '' },
+      { id: 'v6', lideranca_id: 'l1', data_hora: '2026-08-10T09:00:00', observacoes: '' },
+      { id: 'v7', lideranca_id: 'l1', data_hora: '2026-08-18T09:00:00', observacoes: '' },
     ];
     const result = cidadesMaisVisitadas(
       { cidades, liderancas, visitas: extraVisitas },
       15,
       agora,
     );
-    // c1: v2 (passada) + v6 (passada) = 2; v5 futuro não conta
+    // c1: v2 + v7 = 2; v6 antes do corte e v5 futuro não contam
     expect(result.find((r) => r.cidadeId === 'c1')?.valor).toBe(2);
   });
 
@@ -124,7 +142,6 @@ describe('dashboardMetrics', () => {
   });
 
   it('buildRelatorioResumo agrega totais e tabelas completas', () => {
-    const agora = new Date('2026-08-10T12:00:00');
     const rel = buildRelatorioResumo({ cidades, liderancas, visitas }, agora);
     expect(rel.totalMunicipios).toBe(3);
     expect(rel.totalLiderancas).toBe(4);
