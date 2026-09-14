@@ -194,6 +194,82 @@ export function liderancasPorPessoasRelatorio({
   );
 }
 
+export interface CidadeNomeRow {
+  cidadeId: string;
+  nome: string;
+}
+
+export interface CoberturaVisitasCidades {
+  jaVisitadas: CidadeNomeRow[];
+  comLiderancaNaoVisitadas: CidadeNomeRow[];
+  semLideranca: CidadeNomeRow[];
+  /** Entre cidades com liderança: já visitadas. */
+  pctJaVisitadas: number;
+  /** Entre cidades com liderança: ainda não visitadas. */
+  pctNaoVisitadas: number;
+}
+
+function sortByNome(rows: CidadeNomeRow[]): CidadeNomeRow[] {
+  return [...rows].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+/**
+ * Classifica municípios: já visitados (≥16/08), com liderança sem visita, sem liderança.
+ * Percentuais do gráfico circular usam só cidades com liderança.
+ */
+export function coberturaVisitasPorCidade(
+  { cidades, liderancas, visitas }: MetricsInput,
+  agora: Date = new Date(),
+): CoberturaVisitasCidades {
+  const liderancasPorCidade = new Map<string, string[]>();
+  for (const l of liderancas) {
+    const list = liderancasPorCidade.get(l.cidade_id) ?? [];
+    list.push(l.id);
+    liderancasPorCidade.set(l.cidade_id, list);
+  }
+
+  const cidadePorLideranca = new Map(liderancas.map((l) => [l.id, l.cidade_id]));
+  const cidadesVisitadas = new Set<string>();
+  for (const v of visitas) {
+    if (!isVisitaRealizadaContabilizada(v.data_hora, agora)) continue;
+    const cidadeId = cidadePorLideranca.get(v.lideranca_id);
+    if (cidadeId) cidadesVisitadas.add(cidadeId);
+  }
+
+  const jaVisitadas: CidadeNomeRow[] = [];
+  const comLiderancaNaoVisitadas: CidadeNomeRow[] = [];
+  const semLideranca: CidadeNomeRow[] = [];
+
+  for (const c of cidades) {
+    const lids = liderancasPorCidade.get(c.id);
+    if (!lids || lids.length === 0) {
+      semLideranca.push({ cidadeId: c.id, nome: c.nome });
+      continue;
+    }
+    if (cidadesVisitadas.has(c.id)) {
+      jaVisitadas.push({ cidadeId: c.id, nome: c.nome });
+    } else {
+      comLiderancaNaoVisitadas.push({ cidadeId: c.id, nome: c.nome });
+    }
+  }
+
+  const comLiderancaTotal = jaVisitadas.length + comLiderancaNaoVisitadas.length;
+  const pctJaVisitadas =
+    comLiderancaTotal === 0
+      ? 0
+      : Math.round((jaVisitadas.length / comLiderancaTotal) * 1000) / 10;
+  const pctNaoVisitadas =
+    comLiderancaTotal === 0 ? 0 : Math.round((100 - pctJaVisitadas) * 10) / 10;
+
+  return {
+    jaVisitadas: sortByNome(jaVisitadas),
+    comLiderancaNaoVisitadas: sortByNome(comLiderancaNaoVisitadas),
+    semLideranca: sortByNome(semLideranca),
+    pctJaVisitadas,
+    pctNaoVisitadas,
+  };
+}
+
 export interface RelatorioResumo {
   geradoEm: string;
   totalMunicipios: number;
@@ -208,6 +284,7 @@ export interface RelatorioResumo {
   visitasAbertasPorCidade: CityMetric[];
   visitasRealizadasPorCidade: CityMetric[];
   liderancasPorPessoas: LiderancaRelatorioRow[];
+  coberturaVisitas: CoberturaVisitasCidades;
 }
 
 /** Snapshot completo para tela/PDF de relatório (todas as cidades com dado). */
@@ -234,5 +311,6 @@ export function buildRelatorioResumo(input: MetricsInput, agora: Date = new Date
     visitasAbertasPorCidade: visitasEmAbertoPorCidade(input, RELATORIO_TOP_N, agora),
     visitasRealizadasPorCidade: cidadesMaisVisitadas(input, RELATORIO_TOP_N, agora),
     liderancasPorPessoas: liderancasPorPessoasRelatorio(input),
+    coberturaVisitas: coberturaVisitasPorCidade(input, agora),
   };
 }

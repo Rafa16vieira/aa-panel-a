@@ -8,6 +8,7 @@ import {
   contagemCidadesComSemLideranca,
   buildRelatorioResumo,
   liderancasPorPessoasRelatorio,
+  coberturaVisitasPorCidade,
 } from '../utils/dashboardMetrics';
 import {
   isVisitaEmAberto,
@@ -172,5 +173,19 @@ describe('dashboardMetrics', () => {
     expect(result.filter((r) => r.nome === 'M1' || r.nome === 'M2')).toHaveLength(0);
     expect(result[0].valor).toBe(50);
     expect(result.map((r) => r.valor)).toEqual([50, 20, 10]);
+  });
+
+  it('coberturaVisitasPorCidade classifica visitadas, não visitadas e sem liderança', () => {
+    const cidadesExtra: Cidade[] = [...cidades, { id: 'c4', nome: 'Penedo' }];
+    const result = coberturaVisitasPorCidade(
+      { cidades: cidadesExtra, liderancas, visitas },
+      agora,
+    );
+    // c1 visitada (v2), c2 e c3 com liderança sem visita realizada, c4 sem liderança
+    expect(result.jaVisitadas.map((c) => c.cidadeId)).toEqual(['c1']);
+    expect(result.comLiderancaNaoVisitadas.map((c) => c.cidadeId).sort()).toEqual(['c2', 'c3']);
+    expect(result.semLideranca.map((c) => c.cidadeId)).toEqual(['c4']);
+    expect(result.pctJaVisitadas).toBeCloseTo(33.3, 0);
+    expect(result.pctNaoVisitadas).toBeCloseTo(66.7, 0);
   });
 });

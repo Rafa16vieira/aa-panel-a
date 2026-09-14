@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { PieChartCard } from '../components/charts/PieChartCard';
 import { useAppStore } from '../store/useAppStore';
 import { personalizar } from '../theme/personalizar';
 import { buildRelatorioResumo } from '../utils/dashboardMetrics';
@@ -39,6 +40,14 @@ interface LiderancasTableProps {
   rows: LiderancaTableRow[];
 }
 
+interface NomeListProps {
+  title: string;
+  description: string;
+  nomes: string[];
+  /** Exibe botão para copiar a lista em texto (uma cidade por linha). */
+  permitirCopiar?: boolean;
+}
+
 function TableChunk({
   rows,
   startIndex,
@@ -72,6 +81,22 @@ function TableChunk({
         ))}
       </tbody>
     </table>
+  );
+}
+
+function NomeListChunk({
+  nomes,
+  startIndex,
+}: {
+  nomes: string[];
+  startIndex: number;
+}) {
+  return (
+    <ol className="relatorio-nome-list" start={startIndex + 1}>
+      {nomes.map((nome) => (
+        <li key={nome}>{nome}</li>
+      ))}
+    </ol>
   );
 }
 
@@ -147,6 +172,80 @@ function RelatorioListSection({
   );
 }
 
+function NomeListSection({ title, description, nomes, permitirCopiar }: NomeListProps) {
+  const [copiado, setCopiado] = useState(false);
+  const splitAt = Math.ceil(nomes.length / 2);
+  const colA = nomes.slice(0, splitAt);
+  const colB = nomes.slice(splitAt);
+  const maxRowsPorColuna = Math.max(colA.length, colB.length);
+  const densityClass =
+    maxRowsPorColuna > 52
+      ? ' relatorio-section--print-ultra'
+      : maxRowsPorColuna > 42
+        ? ' relatorio-section--print-dense'
+        : '';
+
+  async function copiarLista() {
+    if (nomes.length === 0) return;
+    const texto = nomes.join('\n');
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiado(true);
+      window.setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      /* fallback silencioso se clipboard falhar */
+    }
+  }
+
+  return (
+    <section className={`relatorio-section${densityClass}`}>
+      <div className="relatorio-section__print-unit">
+        <div className="relatorio-section__heading">
+          <h3 className="relatorio-section__title">
+            {title}
+            {nomes.length > 0 ? (
+              <span className="relatorio-section__count"> ({formatNum(nomes.length)})</span>
+            ) : null}
+          </h3>
+          {permitirCopiar && nomes.length > 0 ? (
+            <button
+              type="button"
+              className="relatorio-btn-copiar no-print"
+              onClick={() => void copiarLista()}
+            >
+              {copiado ? 'Copiado!' : 'Copiar lista'}
+            </button>
+          ) : null}
+        </div>
+        <p className="relatorio-section__desc">{description}</p>
+        {nomes.length === 0 ? (
+          <p className="relatorio-empty">Sem dados para exibir.</p>
+        ) : (
+          <>
+            <div className="relatorio-nome-wrap relatorio-table-wrap--screen">
+              <NomeListChunk nomes={nomes} startIndex={0} />
+            </div>
+            <div
+              className={`relatorio-table-columns relatorio-table-columns--print${
+                colB.length === 0 ? ' relatorio-table-columns--single' : ''
+              }`}
+            >
+              <div className="relatorio-table-col">
+                <NomeListChunk nomes={colA} startIndex={0} />
+              </div>
+              {colB.length > 0 && (
+                <div className="relatorio-table-col">
+                  <NomeListChunk nomes={colB} startIndex={splitAt} />
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function MetricTable({ title, description, rows, valueLabel }: MetricTableProps) {
   const tableRows: LiderancaTableRow[] = rows.map((r) => ({
     key: r.nome,
@@ -186,6 +285,22 @@ export function RelatorioPage() {
     [cidades, liderancas, visitas],
   );
 
+  const pieData = useMemo(
+    () => [
+      {
+        name: 'Já visitadas',
+        value: relatorio.coberturaVisitas.jaVisitadas.length,
+        color: personalizar.cores.municipioVisitaRecente,
+      },
+      {
+        name: 'Ainda não visitadas',
+        value: relatorio.coberturaVisitas.comLiderancaNaoVisitadas.length,
+        color: personalizar.cores.municipioComLideranca,
+      },
+    ],
+    [relatorio.coberturaVisitas],
+  );
+
   function exportarPdf() {
     window.print();
   }
@@ -193,6 +308,8 @@ export function RelatorioPage() {
   if (isLoading) {
     return <div className="relatorio-loading">Carregando relatório...</div>;
   }
+
+  const { coberturaVisitas } = relatorio;
 
   return (
     <div className="relatorio-page">
@@ -212,6 +329,12 @@ export function RelatorioPage() {
         <h1>{personalizar.nomeSistema}</h1>
         <p>Relatório de indicadores · {formatData(relatorio.geradoEm)}</p>
       </div>
+
+      <PieChartCard
+        title="Cobertura de visitas"
+        description={`Entre cidades com liderança: ${coberturaVisitas.pctJaVisitadas}% já visitadas · ${coberturaVisitas.pctNaoVisitadas}% ainda não visitadas`}
+        data={pieData}
+      />
 
       <div className="dashboard-stats relatorio-kpis">
         <div className="stat-card">
@@ -243,6 +366,23 @@ export function RelatorioPage() {
           <span className="stat-label">Visitas em aberto</span>
         </div>
       </div>
+
+      <NomeListSection
+        title="Cidades já visitadas"
+        description="Municípios com pelo menos uma visita realizada a partir de 16/08/2026"
+        nomes={coberturaVisitas.jaVisitadas.map((c) => c.nome)}
+      />
+      <NomeListSection
+        title="Cidades com liderança ainda não visitadas"
+        description="Municípios com liderança cadastrada, sem visita realizada no período"
+        nomes={coberturaVisitas.comLiderancaNaoVisitadas.map((c) => c.nome)}
+      />
+      <NomeListSection
+        title="Cidades sem liderança"
+        description="Municípios sem nenhuma liderança cadastrada"
+        nomes={coberturaVisitas.semLideranca.map((c) => c.nome)}
+        permitirCopiar
+      />
 
       <LiderancasPorPessoasTable
         title="Lideranças por pessoas"
