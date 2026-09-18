@@ -13,6 +13,8 @@ interface MetricsInput {
   cidades: Cidade[];
   liderancas: Lideranca[];
   visitas: Visita[];
+  /** Marcações manuais de cidade já visitada (sem registro de visita). */
+  cidadesVisitadasMarcadas?: string[];
 }
 
 function cidadeNomeMap(cidades: Cidade[]): Map<string, string> {
@@ -218,7 +220,7 @@ function sortByNome(rows: CidadeNomeRow[]): CidadeNomeRow[] {
  * Percentuais do gráfico circular usam só cidades com liderança.
  */
 export function coberturaVisitasPorCidade(
-  { cidades, liderancas, visitas }: MetricsInput,
+  { cidades, liderancas, visitas, cidadesVisitadasMarcadas = [] }: MetricsInput,
   agora: Date = new Date(),
 ): CoberturaVisitasCidades {
   const liderancasPorCidade = new Map<string, string[]>();
@@ -229,7 +231,7 @@ export function coberturaVisitasPorCidade(
   }
 
   const cidadePorLideranca = new Map(liderancas.map((l) => [l.id, l.cidade_id]));
-  const cidadesVisitadas = new Set<string>();
+  const cidadesVisitadas = new Set<string>(cidadesVisitadasMarcadas);
   for (const v of visitas) {
     if (!isVisitaRealizadaContabilizada(v.data_hora, agora)) continue;
     const cidadeId = cidadePorLideranca.get(v.lideranca_id);

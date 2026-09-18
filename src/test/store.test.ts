@@ -11,6 +11,7 @@ describe('Store — gestão de lideranças (N por cidade, N visitas)', () => {
       ],
       liderancas: [],
       visitas: [],
+      cidadesVisitadasMarcadas: [],
       isLoading: false,
     });
   });
@@ -73,6 +74,15 @@ describe('Store — gestão de lideranças (N por cidade, N visitas)', () => {
         { id: 'v1', lideranca_id: 'l1', data_hora: '2026-08-17T10:00:00', observacoes: '' },
         { id: 'v2', lideranca_id: 'l1', data_hora: '2099-09-01T14:00:00', observacoes: '' },
       ],
+    });
+    expect(useAppStore.getState().getCidadeStatus('2704302')).toBe('visita_recente');
+  });
+
+  it('marca visita_recente com marcação manual sem criar visita', () => {
+    useAppStore.setState({
+      liderancas: [{ id: 'l1', nome: 'João', cidade_id: '2704302', quantidade_pessoas: 10, responsavel: 'NTR' }],
+      visitas: [],
+      cidadesVisitadasMarcadas: ['2704302'],
     });
     expect(useAppStore.getState().getCidadeStatus('2704302')).toBe('visita_recente');
   });

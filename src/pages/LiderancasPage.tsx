@@ -47,12 +47,15 @@ export function LiderancasPage() {
   }, [liderancas, busca, cidadeMap]);
 
   const gruposPorCidade = useMemo(() => {
-    const grupos = new Map<string, { cidadeNome: string; liderancas: typeof liderancasFiltradas }>();
+    const grupos = new Map<
+      string,
+      { cidadeId: string; cidadeNome: string; liderancas: typeof liderancasFiltradas }
+    >();
 
     for (const l of liderancasFiltradas) {
       const cidadeNome = cidadeMap.get(l.cidade_id) ?? 'Cidade desconhecida';
       if (!grupos.has(l.cidade_id)) {
-        grupos.set(l.cidade_id, { cidadeNome, liderancas: [] });
+        grupos.set(l.cidade_id, { cidadeId: l.cidade_id, cidadeNome, liderancas: [] });
       }
       grupos.get(l.cidade_id)!.liderancas.push(l);
     }
@@ -114,7 +117,7 @@ export function LiderancasPage() {
             Nº de pessoas
           </button>
         </div>
-        <Link to="/lideranca/nova" className="liderancas-btn-nova">
+        <Link to="/lideranca/nova?retorno=/liderancas" className="liderancas-btn-nova">
           Nova liderança
         </Link>
       </div>
@@ -138,18 +141,26 @@ export function LiderancasPage() {
           ) : (
             <p>Ainda não há lideranças cadastradas.</p>
           )}
-          <Link to="/lideranca/nova" className="btn-primary">
+          <Link to="/lideranca/nova?retorno=/liderancas" className="btn-primary">
             Cadastrar liderança
           </Link>
         </div>
       )}
 
       {/* Grupos por cidade */}
-      {gruposPorCidade.map(({ cidadeNome, liderancas: lids }) => (
-        <div key={cidadeNome} className="cidade-group">
+      {gruposPorCidade.map(({ cidadeId, cidadeNome, liderancas: lids }) => (
+        <div key={cidadeId} className="cidade-group">
           <header className="cidade-group-header">
             <h2 className="cidade-group-nome">{cidadeNome}</h2>
             <span className="cidade-group-badge">{lids.length}</span>
+            <Link
+              to={`/lideranca/nova?cidade=${cidadeId}&retorno=/liderancas`}
+              className="cidade-group-add"
+              aria-label={`Nova liderança em ${cidadeNome}`}
+              title="Nova liderança"
+            >
+              +
+            </Link>
           </header>
 
           {lids.map((lideranca) => {
@@ -202,7 +213,7 @@ export function LiderancasPage() {
 
                 <div className="lideranca-card__actions">
                   <Link
-                    to={`/lideranca/editar/${lideranca.id}`}
+                    to={`/lideranca/editar/${lideranca.id}?retorno=/liderancas`}
                     className="action-btn"
                     aria-label={`Editar liderança de ${lideranca.nome}`}
                   >

@@ -143,6 +143,29 @@
   font-weight: 600;
 }
 
+.cidade-group-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border-radius: 8px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-painel);
+  color: var(--cor-primaria);
+  text-decoration: none;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cidade-group-add:hover {
+  background: color-mix(in srgb, var(--cor-primaria) 12%, var(--cor-fundo-painel));
+  border-color: var(--cor-primaria);
+}
+
 /* Liderança card */
 .lideranca-card {
   display: flex;

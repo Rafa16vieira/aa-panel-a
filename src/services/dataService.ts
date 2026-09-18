@@ -15,18 +15,27 @@ interface LocalStore {
   visitas: Visita[];
   /** IDs agenda-* removidos manualmente — sync não recria. */
   agendaBloqueadas: string[];
+  /** Cidades marcadas manualmente como já visitadas (sem criar visita). */
+  cidadesVisitadasMarcadas: string[];
 }
 
 export type AppData = {
   cidades: Cidade[];
   liderancas: Lideranca[];
   visitas: Visita[];
+  cidadesVisitadasMarcadas: string[];
 };
 
 type Listener = (data: LocalStore) => void;
 type Unsubscribe = () => void;
 
-let localStore: LocalStore = { cidades: [], liderancas: [], visitas: [], agendaBloqueadas: [] };
+let localStore: LocalStore = {
+  cidades: [],
+  liderancas: [],
+  visitas: [],
+  agendaBloqueadas: [],
+  cidadesVisitadasMarcadas: [],
+};
 const localListeners = new Set<Listener>();
 
 /** Quando true, força persistência local mesmo com Supabase no .env (ex.: falha de conexão). */
@@ -56,12 +65,21 @@ function loadLocalStore(): LocalStore {
         agendaBloqueadas: Array.isArray(parsed.agendaBloqueadas)
           ? parsed.agendaBloqueadas
           : loadAgendaBloqueadasLegacy(),
+        cidadesVisitadasMarcadas: Array.isArray(parsed.cidadesVisitadasMarcadas)
+          ? parsed.cidadesVisitadasMarcadas
+          : [],
       };
     }
   } catch {
     /* ignore */
   }
-  return { cidades: [], liderancas: [], visitas: [], agendaBloqueadas: loadAgendaBloqueadasLegacy() };
+  return {
+    cidades: [],
+    liderancas: [],
+    visitas: [],
+    agendaBloqueadas: loadAgendaBloqueadasLegacy(),
+    cidadesVisitadasMarcadas: [],
+  };
 }
 
 function loadAgendaBloqueadasLegacy(): string[] {
@@ -162,23 +180,39 @@ function syncVisitasLocal(liderancaId: string, inputs: VisitaInput[]): void {
 
 function subscribeLocal(onData: (data: AppData) => void): Unsubscribe {
   localStore = loadLocalStore();
-  onData(localStore);
-  const listener: Listener = (data) => onData(data);
+  onData(toAppData(localStore));
+  const listener: Listener = (data) => onData(toAppData(data));
   localListeners.add(listener);
   return () => localListeners.delete(listener);
 }
 
+function toAppData(store: LocalStore): AppData {
+  return {
+    cidades: store.cidades,
+    liderancas: store.liderancas,
+    visitas: store.visitas,
+    cidadesVisitadasMarcadas: store.cidadesVisitadasMarcadas,
+  };
+}
+
 async function fetchAllTables(): Promise<AppData> {
   const sb = getSupabase();
-  const [cidadesRes, liderancasRes, visitasRes] = await Promise.all([
+  const [cidadesRes, liderancasRes, visitasRes, marcadasRes] = await Promise.all([
     sb.from('cidades').select('id,nome'),
     sb.from('liderancas').select('id,nome,cidade_id,quantidade_pessoas,responsavel'),
     sb.from('visitas').select('id,lideranca_id,data_hora,observacoes'),
+    sb.from('cidades_visitadas_marcadas').select('cidade_id'),
   ]);
 
   if (cidadesRes.error) throw cidadesRes.error;
   if (liderancasRes.error) throw liderancasRes.error;
   if (visitasRes.error) throw visitasRes.error;
+  if (marcadasRes.error) {
+    console.warn(
+      '[painel-alagoas] Tabela cidades_visitadas_marcadas indisponível — rode a migration 005.',
+      marcadasRes.error,
+    );
+  }
 
   return {
     cidades: (cidadesRes.data ?? []) as Cidade[],
@@ -187,6 +221,9 @@ async function fetchAllTables(): Promise<AppData> {
       responsavel: l.responsavel?.trim() || RESPONSAVEL_PADRAO,
     })),
     visitas: (visitasRes.data ?? []).map(mapVisitaRow),
+    cidadesVisitadasMarcadas: marcadasRes.error
+      ? []
+      : (marcadasRes.data ?? []).map((r) => r.cidade_id as string),
   };
 }
 
@@ -252,12 +289,13 @@ export function subscribeData(onData: (data: AppData) => void): Unsubscribe {
   let cidades: Cidade[] = [];
   let liderancas: Lideranca[] = [];
   let visitas: Visita[] = [];
+  let cidadesVisitadasMarcadas: string[] = [];
   let settled = false;
   let unsubscribed = false;
   let localUnsub: Unsubscribe | undefined;
   let channel: RealtimeChannel | undefined;
 
-  const emit = () => onData({ cidades, liderancas, visitas });
+  const emit = () => onData({ cidades, liderancas, visitas, cidadesVisitadasMarcadas });
 
   const fallbackToLocal = (reason: unknown) => {
     if (settled || unsubscribed) return;
@@ -306,6 +344,7 @@ export function subscribeData(onData: (data: AppData) => void): Unsubscribe {
       cidades = initial.cidades;
       liderancas = initial.liderancas;
       visitas = initial.visitas;
+      cidadesVisitadasMarcadas = initial.cidadesVisitadasMarcadas;
       emit();
 
       channel = getSupabase()
@@ -335,6 +374,24 @@ export function subscribeData(onData: (data: AppData) => void): Unsubscribe {
             const raw = (payload.new ?? payload.old) as Parameters<typeof mapVisitaRow>[0] | null;
             const row = raw ? mapVisitaRow(raw) : null;
             visitas = applyChange(visitas, payload.eventType, row);
+            emit();
+          },
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'cidades_visitadas_marcadas' },
+          (payload) => {
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              const id = (payload.new as { cidade_id?: string } | null)?.cidade_id;
+              if (id && !cidadesVisitadasMarcadas.includes(id)) {
+                cidadesVisitadasMarcadas = [...cidadesVisitadasMarcadas, id];
+              }
+            } else if (payload.eventType === 'DELETE') {
+              const id = (payload.old as { cidade_id?: string } | null)?.cidade_id;
+              if (id) {
+                cidadesVisitadasMarcadas = cidadesVisitadasMarcadas.filter((c) => c !== id);
+              }
+            }
             emit();
           },
         )
@@ -413,6 +470,40 @@ export async function deleteLideranca(liderancaId: string): Promise<void> {
     localStore.visitas = localStore.visitas.filter((v) => v.lideranca_id !== liderancaId);
     saveLocalStore();
   }
+}
+
+/** Marca/desmarca cidade como já visitada sem criar registro de visita. */
+export async function setCidadeVisitadaMarcada(
+  cidadeId: string,
+  visitada: boolean,
+): Promise<string[]> {
+  if (isSupabaseActive()) {
+    const sb = getSupabase();
+    if (visitada) {
+      const { error } = await sb
+        .from('cidades_visitadas_marcadas')
+        .upsert({ cidade_id: cidadeId });
+      if (error) throw error;
+    } else {
+      const { error } = await sb
+        .from('cidades_visitadas_marcadas')
+        .delete()
+        .eq('cidade_id', cidadeId);
+      if (error) throw error;
+    }
+    const { data, error: listError } = await sb
+      .from('cidades_visitadas_marcadas')
+      .select('cidade_id');
+    if (listError) throw listError;
+    return (data ?? []).map((r) => r.cidade_id as string);
+  }
+
+  const set = new Set(localStore.cidadesVisitadasMarcadas);
+  if (visitada) set.add(cidadeId);
+  else set.delete(cidadeId);
+  localStore.cidadesVisitadasMarcadas = Array.from(set);
+  saveLocalStore();
+  return localStore.cidadesVisitadasMarcadas;
 }
 
 export function getStorageMode(): 'supabase' | 'local' {

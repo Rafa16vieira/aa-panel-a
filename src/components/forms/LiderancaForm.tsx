@@ -26,6 +26,7 @@ export function LiderancaForm() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
+  const retorno = searchParams.get('retorno');
 
   const cidades = useAppStore((s) => s.cidades);
   const liderancas = useAppStore((s) => s.liderancas);
@@ -108,7 +109,11 @@ export function LiderancaForm() {
         },
         isEditing ? id : undefined,
       );
-      navigate('/mapa');
+      navigate(
+        retorno && retorno.startsWith('/') && !retorno.startsWith('//')
+          ? retorno
+          : '/mapa',
+      );
     } finally {
       setSaving(false);
     }
@@ -240,7 +245,17 @@ export function LiderancaForm() {
           <button type="submit" className="btn-primary" disabled={saving}>
             {saving ? 'Salvando...' : 'Salvar'}
           </button>
-          <button type="button" className="btn-secondary" onClick={() => navigate('/liderancas')}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() =>
+              navigate(
+                retorno && retorno.startsWith('/') && !retorno.startsWith('//')
+                  ? retorno
+                  : '/liderancas',
+              )
+            }
+          >
             Cancelar
           </button>
           {isEditing && (

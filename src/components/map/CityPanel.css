@@ -105,6 +105,58 @@
   padding: 20px 0;
 }
 
+.city-panel__visita-mark {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.city-panel__visita-status {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--cor-municipio-visita-recente, var(--cor-primaria));
+}
+
+.city-panel__visita-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--cor-texto-secundario);
+}
+
+.btn-visita-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-visita-mark:hover:not(:disabled) {
+  border-color: var(--cor-primaria);
+  color: var(--cor-primaria);
+}
+
+.btn-visita-mark--active {
+  background: color-mix(in srgb, var(--cor-municipio-visita-recente, var(--cor-primaria)) 12%, var(--cor-fundo));
+  border-color: var(--cor-municipio-visita-recente, var(--cor-primaria));
+  color: var(--cor-municipio-visita-recente, var(--cor-primaria));
+}
+
+.btn-visita-mark:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 .btn-primary {
   display: inline-flex;
   align-items: center;

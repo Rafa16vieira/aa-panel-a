@@ -62,6 +62,7 @@ export function AlagoasMap({ viewMode = 'status' }: AlagoasMapProps) {
   const [eleitoradoPorMunicipio, setEleitoradoPorMunicipio] = useState<Record<string, number>>({});
   const liderancas = useAppStore((s) => s.liderancas);
   const visitas = useAppStore((s) => s.visitas);
+  const cidadesVisitadasMarcadas = useAppStore((s) => s.cidadesVisitadasMarcadas);
   const selectedCidadeId = useAppStore((s) => s.selectedCidadeId);
   const hoveredCidadeId = useAppStore((s) => s.hoveredCidadeId);
   const getCidadeStatus = useAppStore((s) => s.getCidadeStatus);
@@ -240,7 +241,7 @@ export function AlagoasMap({ viewMode = 'status' }: AlagoasMapProps) {
         <ZoomControl position="bottomleft" />
         <MapFitBounds geojson={geojson} />
         <GeoJSON
-          key={`${viewMode}-${liderancas.length}-${visitas.length}-${selectedCidadeId}-${Object.keys(eleitoradoPorMunicipio).length}-${taxaMaxCobertura}`}
+          key={`${viewMode}-${liderancas.length}-${visitas.length}-${cidadesVisitadasMarcadas.length}-${selectedCidadeId}-${Object.keys(eleitoradoPorMunicipio).length}-${taxaMaxCobertura}`}
           data={geojson}
           style={styleFeature}
           onEachFeature={onEachFeature}

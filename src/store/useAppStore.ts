@@ -9,12 +9,19 @@ interface AppState {
   cidades: Cidade[];
   liderancas: Lideranca[];
   visitas: Visita[];
+  cidadesVisitadasMarcadas: string[];
   selectedCidadeId: string | null;
   hoveredCidadeId: string | null;
   isPanelOpen: boolean;
   isLoading: boolean;
 
-  setData: (data: { cidades: Cidade[]; liderancas: Lideranca[]; visitas: Visita[] }) => void;
+  setData: (data: {
+    cidades: Cidade[];
+    liderancas: Lideranca[];
+    visitas: Visita[];
+    cidadesVisitadasMarcadas?: string[];
+  }) => void;
+  setCidadesVisitadasMarcadas: (ids: string[]) => void;
   setLoading: (loading: boolean) => void;
   selectCidade: (id: string | null) => void;
   hoverCidade: (id: string | null) => void;
@@ -23,6 +30,7 @@ interface AppState {
 
   getCidadeComDados: (cidadeId: string) => CidadeComDados | undefined;
   getCidadeStatus: (cidadeId: string) => CidadeStatus;
+  isCidadeVisitadaMarcada: (cidadeId: string) => boolean;
   getLiderancasByCidade: (cidadeId: string) => Lideranca[];
   getVisitasByLideranca: (liderancaId: string) => Visita[];
 }
@@ -31,12 +39,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   cidades: [],
   liderancas: [],
   visitas: [],
+  cidadesVisitadasMarcadas: [],
   selectedCidadeId: null,
   hoveredCidadeId: null,
   isPanelOpen: false,
   isLoading: true,
 
-  setData: (data) => set({ ...data, isLoading: false }),
+  setData: (data) =>
+    set({
+      cidades: data.cidades,
+      liderancas: data.liderancas,
+      visitas: data.visitas,
+      ...(data.cidadesVisitadasMarcadas !== undefined
+        ? { cidadesVisitadasMarcadas: data.cidadesVisitadasMarcadas }
+        : {}),
+      isLoading: false,
+    }),
+
+  setCidadesVisitadasMarcadas: (ids) => set({ cidadesVisitadasMarcadas: ids }),
 
   setLoading: (loading) => set({ isLoading: loading }),
 
@@ -54,6 +74,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   getVisitasByLideranca: (liderancaId) =>
     get().visitas.filter((v) => v.lideranca_id === liderancaId),
 
+  isCidadeVisitadaMarcada: (cidadeId) =>
+    get().cidadesVisitadasMarcadas.includes(cidadeId),
+
   getCidadeComDados: (cidadeId) => {
     const cidade = get().cidades.find((c) => c.id === cidadeId);
     if (!cidade) return undefined;
@@ -69,8 +92,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     const liderancaIds = new Set(liderancas.map((l) => l.id));
     const visitasCidade = get().visitas.filter((v) => liderancaIds.has(v.lideranca_id));
 
-    // Cidade já visitada (a partir de 16/08/2026) prevalece sobre agendamento futuro.
-    if (visitasCidade.some((v) => isVisitaRealizadaContabilizada(v.data_hora))) {
+    // Cidade já visitada (visita registrada ou marcação manual) prevalece sobre agendamento.
+    if (
+      visitasCidade.some((v) => isVisitaRealizadaContabilizada(v.data_hora)) ||
+      get().cidadesVisitadasMarcadas.includes(cidadeId)
+    ) {
       return 'visita_recente';
     }
     if (visitasCidade.some((v) => isVisitaAgendadaContabilizada(v.data_hora))) {

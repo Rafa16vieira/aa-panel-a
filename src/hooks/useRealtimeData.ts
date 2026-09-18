@@ -37,6 +37,7 @@ export function useRealtimeData() {
           cidades: geoCidades,
           liderancas: [],
           visitas: [],
+          cidadesVisitadasMarcadas: [],
         });
 
         unsub = subscribeData((data) => {
@@ -47,6 +48,7 @@ export function useRealtimeData() {
             cidades: mergedCidades,
             liderancas: data.liderancas,
             visitas: data.visitas,
+            cidadesVisitadasMarcadas: data.cidadesVisitadasMarcadas,
           });
 
           if (!seededRef.current && data.cidades.length === 0) {
@@ -59,7 +61,12 @@ export function useRealtimeData() {
       } catch (err) {
         console.error('[painel-alagoas] Falha ao inicializar dados', err);
         if (!cancelled) {
-          setData({ cidades: [], liderancas: [], visitas: [] });
+          setData({
+            cidades: [],
+            liderancas: [],
+            visitas: [],
+            cidadesVisitadasMarcadas: [],
+          });
         }
       }
     }

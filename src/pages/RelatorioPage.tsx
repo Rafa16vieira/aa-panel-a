@@ -279,10 +279,17 @@ export function RelatorioPage() {
   const cidades = useAppStore((s) => s.cidades);
   const liderancas = useAppStore((s) => s.liderancas);
   const visitas = useAppStore((s) => s.visitas);
+  const cidadesVisitadasMarcadas = useAppStore((s) => s.cidadesVisitadasMarcadas);
 
   const relatorio = useMemo(
-    () => buildRelatorioResumo({ cidades, liderancas, visitas }),
-    [cidades, liderancas, visitas],
+    () =>
+      buildRelatorioResumo({
+        cidades,
+        liderancas,
+        visitas,
+        cidadesVisitadasMarcadas,
+      }),
+    [cidades, liderancas, visitas, cidadesVisitadasMarcadas],
   );
 
   const pieData = useMemo(

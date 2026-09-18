@@ -21,11 +21,12 @@ Fonte da verdade: `src/types/index.ts`. Store, services e forms devem aderir a e
 ## Status de município (`CidadeStatus`)
 
 1. `sem_lideranca` — sem liderança
-2. `visita_recente` — cidade já visitada (visita realizada a partir de 16/08/2026; verde escuro no mapa)
+2. `visita_recente` — cidade já visitada (visita realizada a partir de 16/08/2026 **ou** marcação manual no painel do mapa; verde escuro)
 3. `visita_agendada` — liderança com visita futura/hoje **e** cidade ainda não visitada no período
 4. `com_lideranca` — tem liderança, sem visita contabilizada nem agendamento
 
 Só entram visitas com `data_hora` ≥ **2026-08-16** (ou sem data, para em aberto). Datas anteriores são ignoradas no mapa/KPIs/relatório.
+Marcações manuais ficam em `cidades_visitadas_marcadas` (migration 005) e entram no status/relatório sem criar visita.
 
 Calculado em `useAppStore.getCidadeStatus` — não persistir cor/status no banco.
 
