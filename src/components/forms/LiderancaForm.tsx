@@ -21,10 +21,28 @@ function newVisitaRow(partial?: Partial<VisitaFormRow>): VisitaFormRow {
   };
 }
 
-export function LiderancaForm() {
-  const { id } = useParams<{ id: string }>();
+export interface LiderancaFormProps {
+  /** Quando true, não usa rotas — ideal para pop-up. */
+  embedded?: boolean;
+  /** Prefill de cidade (ex.: botão + na listagem). */
+  initialCidadeId?: string;
+  /** Id da liderança ao editar no pop-up. */
+  liderancaId?: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export function LiderancaForm({
+  embedded = false,
+  initialCidadeId,
+  liderancaId: liderancaIdProp,
+  onSuccess,
+  onCancel,
+}: LiderancaFormProps = {}) {
+  const { id: idParam } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const id = embedded ? liderancaIdProp : idParam;
   const isEditing = Boolean(id);
   const retorno = searchParams.get('retorno');
 
@@ -32,13 +50,27 @@ export function LiderancaForm() {
   const liderancas = useAppStore((s) => s.liderancas);
   const visitas = useAppStore((s) => s.visitas);
 
+  const cidadeInicial =
+    initialCidadeId ?? (!embedded ? (searchParams.get('cidade') ?? '') : '');
+
   const [nome, setNome] = useState('');
-  const [cidadeId, setCidadeId] = useState(searchParams.get('cidade') ?? '');
+  const [cidadeId, setCidadeId] = useState(cidadeInicial);
   const [quantidadePessoas, setQuantidadePessoas] = useState(0);
   const [responsavel, setResponsavel] = useState(RESPONSAVEL_PADRAO);
   const [visitasForm, setVisitasForm] = useState<VisitaFormRow[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (embedded && !liderancaIdProp) {
+      setNome('');
+      setCidadeId(initialCidadeId ?? '');
+      setQuantidadePessoas(0);
+      setResponsavel(RESPONSAVEL_PADRAO);
+      setVisitasForm([]);
+      setErrors({});
+    }
+  }, [embedded, initialCidadeId, liderancaIdProp]);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -67,6 +99,29 @@ export function LiderancaForm() {
     () => [...cidades].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
     [cidades],
   );
+
+  function resolveRetorno(fallback: string): string {
+    if (retorno && retorno.startsWith('/') && !retorno.startsWith('//')) {
+      return retorno;
+    }
+    return fallback;
+  }
+
+  function finishSuccess() {
+    if (embedded) {
+      onSuccess?.();
+      return;
+    }
+    navigate(resolveRetorno('/mapa'));
+  }
+
+  function finishCancel() {
+    if (embedded) {
+      onCancel?.();
+      return;
+    }
+    navigate(resolveRetorno('/liderancas'));
+  }
 
   function updateVisita(key: string, patch: Partial<VisitaFormRow>) {
     setVisitasForm((rows) => rows.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -109,11 +164,7 @@ export function LiderancaForm() {
         },
         isEditing ? id : undefined,
       );
-      navigate(
-        retorno && retorno.startsWith('/') && !retorno.startsWith('//')
-          ? retorno
-          : '/mapa',
-      );
+      finishSuccess();
     } finally {
       setSaving(false);
     }
@@ -124,33 +175,43 @@ export function LiderancaForm() {
     setSaving(true);
     try {
       await deleteLideranca(id);
-      navigate('/liderancas');
+      if (embedded) {
+        onSuccess?.();
+      } else {
+        navigate('/liderancas');
+      }
     } finally {
       setSaving(false);
     }
   }
 
-  return (
-    <div className="form-page">
-      <h2>{isEditing ? 'Editar Liderança' : 'Nova Liderança'}</h2>
+  const formIdPrefix = embedded ? 'modal-' : '';
 
-      <form className="lideranca-form" onSubmit={handleSubmit}>
+  return (
+    <div className={`form-page${embedded ? ' form-page--embedded' : ''}`}>
+      {!embedded && <h2>{isEditing ? 'Editar Liderança' : 'Nova Liderança'}</h2>}
+
+      <form
+        className={`lideranca-form${embedded ? ' lideranca-form--embedded' : ''}`}
+        onSubmit={handleSubmit}
+      >
         <div className="form-group">
-          <label htmlFor="nome">Nome da liderança *</label>
+          <label htmlFor={`${formIdPrefix}nome`}>Nome da liderança *</label>
           <input
-            id="nome"
+            id={`${formIdPrefix}nome`}
             type="text"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Ex: João Silva"
+            autoFocus={embedded}
           />
           {errors.nome && <span className="form-error">{errors.nome}</span>}
         </div>
 
         <div className="form-group">
-          <label htmlFor="cidade">Cidade *</label>
+          <label htmlFor={`${formIdPrefix}cidade`}>Cidade *</label>
           <select
-            id="cidade"
+            id={`${formIdPrefix}cidade`}
             value={cidadeId}
             onChange={(e) => setCidadeId(e.target.value)}
           >
@@ -166,9 +227,9 @@ export function LiderancaForm() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="quantidade">Quantidade de pessoas *</label>
+          <label htmlFor={`${formIdPrefix}quantidade`}>Quantidade de pessoas *</label>
           <input
-            id="quantidade"
+            id={`${formIdPrefix}quantidade`}
             type="number"
             min={0}
             value={quantidadePessoas}
@@ -180,9 +241,9 @@ export function LiderancaForm() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="responsavel">Responsável *</label>
+          <label htmlFor={`${formIdPrefix}responsavel`}>Responsável *</label>
           <input
-            id="responsavel"
+            id={`${formIdPrefix}responsavel`}
             type="text"
             value={responsavel}
             onChange={(e) => setResponsavel(e.target.value)}
@@ -215,18 +276,18 @@ export function LiderancaForm() {
                 </button>
               </div>
               <div className="form-group">
-                <label htmlFor={`visita-data-${visita.key}`}>Data/hora</label>
+                <label htmlFor={`${formIdPrefix}visita-data-${visita.key}`}>Data/hora</label>
                 <input
-                  id={`visita-data-${visita.key}`}
+                  id={`${formIdPrefix}visita-data-${visita.key}`}
                   type="datetime-local"
                   value={visita.data_hora}
                   onChange={(e) => updateVisita(visita.key, { data_hora: e.target.value })}
                 />
               </div>
               <div className="form-group">
-                <label htmlFor={`visita-obs-${visita.key}`}>Observações</label>
+                <label htmlFor={`${formIdPrefix}visita-obs-${visita.key}`}>Observações</label>
                 <textarea
-                  id={`visita-obs-${visita.key}`}
+                  id={`${formIdPrefix}visita-obs-${visita.key}`}
                   value={visita.observacoes}
                   onChange={(e) => updateVisita(visita.key, { observacoes: e.target.value })}
                   rows={2}
@@ -245,17 +306,7 @@ export function LiderancaForm() {
           <button type="submit" className="btn-primary" disabled={saving}>
             {saving ? 'Salvando...' : 'Salvar'}
           </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() =>
-              navigate(
-                retorno && retorno.startsWith('/') && !retorno.startsWith('//')
-                  ? retorno
-                  : '/liderancas',
-              )
-            }
-          >
+          <button type="button" className="btn-secondary" onClick={finishCancel}>
             Cancelar
           </button>
           {isEditing && (

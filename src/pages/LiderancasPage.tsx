@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useCallback } from 'react';
+import { LiderancaForm } from '../components/forms/LiderancaForm';
+import { LiderancaFormModal } from '../components/forms/LiderancaFormModal';
 import { useAppStore } from '../store/useAppStore';
 import {
   isVisitaAgendadaContabilizada,
@@ -21,6 +22,30 @@ export function LiderancasPage() {
 
   const [busca, setBusca] = useState('');
   const [ordem, setOrdem] = useState<OrdemType>('cidade');
+  const [modalAberto, setModalAberto] = useState(false);
+  const [modalCidadeId, setModalCidadeId] = useState<string | undefined>();
+  const [modalLiderancaId, setModalLiderancaId] = useState<string | undefined>();
+  const [modalKey, setModalKey] = useState(0);
+
+  const abrirNovaLideranca = useCallback((cidadeId?: string) => {
+    setModalLiderancaId(undefined);
+    setModalCidadeId(cidadeId);
+    setModalKey((k) => k + 1);
+    setModalAberto(true);
+  }, []);
+
+  const abrirEditarLideranca = useCallback((liderancaId: string) => {
+    setModalCidadeId(undefined);
+    setModalLiderancaId(liderancaId);
+    setModalKey((k) => k + 1);
+    setModalAberto(true);
+  }, []);
+
+  const fecharModal = useCallback(() => {
+    setModalAberto(false);
+    setModalCidadeId(undefined);
+    setModalLiderancaId(undefined);
+  }, []);
 
   const cidadeMap = useMemo(
     () => new Map(cidades.map((c) => [c.id, c.nome])),
@@ -80,9 +105,10 @@ export function LiderancasPage() {
     [liderancasFiltradas],
   );
 
+  const editando = Boolean(modalLiderancaId);
+
   return (
     <div className="liderancas-page">
-      {/* Toolbar */}
       <div className="liderancas-toolbar">
         <div className="search-input-wrapper">
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -117,19 +143,21 @@ export function LiderancasPage() {
             Nº de pessoas
           </button>
         </div>
-        <Link to="/lideranca/nova?retorno=/liderancas" className="liderancas-btn-nova">
+        <button
+          type="button"
+          className="liderancas-btn-nova"
+          onClick={() => abrirNovaLideranca()}
+        >
           Nova liderança
-        </Link>
+        </button>
       </div>
 
-      {/* Summary */}
       <p className="liderancas-summary">
         {liderancasFiltradas.length === 0
           ? 'Nenhuma liderança encontrada'
           : `${liderancasFiltradas.length} liderança${liderancasFiltradas.length !== 1 ? 's' : ''} em ${gruposPorCidade.length} cidade${gruposPorCidade.length !== 1 ? 's' : ''} · ${totalPessoas.toLocaleString('pt-BR')} pessoas no total`}
       </p>
 
-      {/* Empty state */}
       {liderancasFiltradas.length === 0 && (
         <div className="liderancas-empty">
           <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
@@ -141,26 +169,30 @@ export function LiderancasPage() {
           ) : (
             <p>Ainda não há lideranças cadastradas.</p>
           )}
-          <Link to="/lideranca/nova?retorno=/liderancas" className="btn-primary">
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => abrirNovaLideranca()}
+          >
             Cadastrar liderança
-          </Link>
+          </button>
         </div>
       )}
 
-      {/* Grupos por cidade */}
       {gruposPorCidade.map(({ cidadeId, cidadeNome, liderancas: lids }) => (
         <div key={cidadeId} className="cidade-group">
           <header className="cidade-group-header">
             <h2 className="cidade-group-nome">{cidadeNome}</h2>
             <span className="cidade-group-badge">{lids.length}</span>
-            <Link
-              to={`/lideranca/nova?cidade=${cidadeId}&retorno=/liderancas`}
+            <button
+              type="button"
               className="cidade-group-add"
+              onClick={() => abrirNovaLideranca(cidadeId)}
               aria-label={`Nova liderança em ${cidadeNome}`}
               title="Nova liderança"
             >
               +
-            </Link>
+            </button>
           </header>
 
           {lids.map((lideranca) => {
@@ -212,19 +244,35 @@ export function LiderancasPage() {
                 </div>
 
                 <div className="lideranca-card__actions">
-                  <Link
-                    to={`/lideranca/editar/${lideranca.id}?retorno=/liderancas`}
+                  <button
+                    type="button"
                     className="action-btn"
+                    onClick={() => abrirEditarLideranca(lideranca.id)}
                     aria-label={`Editar liderança de ${lideranca.nome}`}
                   >
                     Editar
-                  </Link>
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
       ))}
+
+      <LiderancaFormModal
+        title={editando ? 'Editar Liderança' : 'Nova Liderança'}
+        open={modalAberto}
+        onClose={fecharModal}
+      >
+        <LiderancaForm
+          key={modalKey}
+          embedded
+          initialCidadeId={modalCidadeId}
+          liderancaId={modalLiderancaId}
+          onSuccess={fecharModal}
+          onCancel={fecharModal}
+        />
+      </LiderancaFormModal>
     </div>
   );
 }
